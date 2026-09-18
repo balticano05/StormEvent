@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 
 import static com.workspace.storm.event.utils.Constants.BASE_URL;
 import static com.workspace.storm.event.utils.Constants.BELHOTEL_DATE;
@@ -31,23 +31,11 @@ public class BelHotelClient {
     private final BelHotelResponseParser responseParser;
 
     public List<Hotel> search(HotelSearchRequest req) {
-
-        String lang = Local.normalizedLang(req.getLang());
-        HttpUrl base = Objects.requireNonNull(HttpUrl.parse(BASE_URL));
-
-        HttpUrl.Builder urlBuilder = base.newBuilder();
-        if ("en".equals(lang)) {
-            urlBuilder.addPathSegment("en");
+        if (req == null) {
+            throw new IllegalArgumentException("req must not be null");
         }
 
-        HttpUrl url = Objects.requireNonNull(HttpUrl.parse(BASE_URL)).newBuilder()
-                .addQueryParameter("calendar", "detail")
-                .addQueryParameter("city", String.valueOf(req.getCityId()))
-                .addQueryParameter("now_date1", req.getCheckIn().format(BELHOTEL_DATE))
-                .addQueryParameter("now_date2", req.getCheckOut().format(BELHOTEL_DATE))
-                .addQueryParameter("group_adult", String.valueOf(req.getAdults()))
-                .addQueryParameter("group_children", String.valueOf(req.getChildren()))
-                .build();
+        HttpUrl url = buildUrl(req);
 
         Request request = new Request.Builder()
                 .url(url)
@@ -63,6 +51,9 @@ public class BelHotelClient {
             }
 
             ResponseBody body = response.body();
+            if (body == null) {
+                throw new BelHotelClientException("Empty Belhotel response");
+            }
             try (InputStream in = body.byteStream()) {
                 Document doc = Jsoup.parse(in, "windows-1251", url.toString());
                 return responseParser.parse(doc, req.getCityId());
@@ -71,6 +62,33 @@ public class BelHotelClient {
         } catch (IOException e) {
             throw new BelHotelClientException("Failed to load Belhotel page", e);
         }
+    }
+
+    private HttpUrl buildUrl(HotelSearchRequest req) {
+        if (req.getCheckIn() == null || req.getCheckOut() == null) {
+            throw new IllegalArgumentException("checkIn and checkOut must not be null");
+        }
+        Long cityId = req.getCityId();
+        if (cityId == null) {
+            throw new IllegalArgumentException("cityId must not be null");
+        }
+
+        HttpUrl.Builder urlBuilder = Optional.ofNullable(HttpUrl.parse(BASE_URL))
+                .map(HttpUrl::newBuilder)
+                .orElseThrow(() -> new IllegalStateException("Invalid base URL: " + BASE_URL));
+
+        if ("en".equals(Local.normalizedLang(req.getLang()))) {
+            urlBuilder.addPathSegment("en");
+        }
+
+        return urlBuilder
+                .addQueryParameter("calendar", "detail")
+                .addQueryParameter("city", String.valueOf(cityId))
+                .addQueryParameter("now_date1", req.getCheckIn().format(BELHOTEL_DATE))
+                .addQueryParameter("now_date2", req.getCheckOut().format(BELHOTEL_DATE))
+                .addQueryParameter("group_adult", String.valueOf(req.getAdults()))
+                .addQueryParameter("group_children", String.valueOf(req.getChildren()))
+                .build();
     }
 
 }
