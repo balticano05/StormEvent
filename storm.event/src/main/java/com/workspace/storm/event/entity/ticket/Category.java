@@ -1,4 +1,4 @@
-package com.workspace.storm.event.entity;
+package com.workspace.storm.event.entity.ticket;
 
 import org.jetbrains.annotations.NotNull;
 

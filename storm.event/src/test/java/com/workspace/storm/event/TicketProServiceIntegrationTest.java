@@ -1,6 +1,6 @@
 package com.workspace.storm.event;
 
-import com.workspace.storm.event.entity.Event;
+import com.workspace.storm.event.entity.ticket.Event;
 import com.workspace.storm.event.service.TicketProService;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Tag;

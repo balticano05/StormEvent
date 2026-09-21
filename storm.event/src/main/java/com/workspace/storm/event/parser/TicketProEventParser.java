@@ -1,9 +1,9 @@
 package com.workspace.storm.event.parser;
 
-import com.workspace.storm.event.entity.Address;
-import com.workspace.storm.event.entity.Event;
-import com.workspace.storm.event.entity.Location;
-import com.workspace.storm.event.entity.Offer;
+import com.workspace.storm.event.entity.ticket.Address;
+import com.workspace.storm.event.entity.ticket.Event;
+import com.workspace.storm.event.entity.ticket.Location;
+import com.workspace.storm.event.entity.ticket.Offer;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;

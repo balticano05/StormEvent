@@ -1,8 +1,7 @@
-package com.workspace.storm.event.entity;
+package com.workspace.storm.event.entity.hotel;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
@@ -13,11 +12,11 @@ import java.math.BigDecimal;
 public class RoomOffer {
 
     private String roomType;
-    private Integer capacity;
+    private int capacity;
+    private String imageUrl;
     private BigDecimal price;
     private String currency;
     private boolean breakfastIncluded;
-    private String imageUrl;
     private String bookingUrl;
 
 }

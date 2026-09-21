@@ -1,7 +1,7 @@
 package com.workspace.storm.event.parser;
 
-import com.workspace.storm.event.entity.Hotel;
-import com.workspace.storm.event.entity.RoomOffer;
+import com.workspace.storm.event.entity.hotel.Hotel;
+import com.workspace.storm.event.entity.hotel.RoomOffer;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;

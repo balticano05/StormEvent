@@ -1,8 +1,8 @@
 package com.workspace.storm.event.service;
 
 import com.workspace.storm.event.client.TicketProClient;
-import com.workspace.storm.event.entity.Category;
-import com.workspace.storm.event.entity.Event;
+import com.workspace.storm.event.entity.ticket.Category;
+import com.workspace.storm.event.entity.ticket.Event;
 import com.workspace.storm.event.exception.TicketProClientException;
 import com.workspace.storm.event.exception.TicketProServiceException;
 import com.workspace.storm.event.parser.TicketProEventParser;

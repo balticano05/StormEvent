@@ -2,7 +2,7 @@ package com.workspace.storm.event;
 
 import com.workspace.storm.event.client.BelHotelClient;
 import com.workspace.storm.event.dto.HotelSearchRequest;
-import com.workspace.storm.event.entity.Hotel;
+import com.workspace.storm.event.entity.hotel.Hotel;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;

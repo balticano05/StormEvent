@@ -1,8 +1,7 @@
-package com.workspace.storm.event.entity;
+package com.workspace.storm.event.entity.hotel;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 import java.util.ArrayList;

@@ -1,7 +1,7 @@
 package com.workspace.storm.event.client;
 
 import com.workspace.storm.event.dto.HotelSearchRequest;
-import com.workspace.storm.event.entity.Hotel;
+import com.workspace.storm.event.entity.hotel.Hotel;
 import com.workspace.storm.event.exception.BelHotelClientException;
 import com.workspace.storm.event.parser.BelHotelResponseParser;
 import com.workspace.storm.event.utils.Local;
