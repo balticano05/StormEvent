@@ -1,0 +1,4208 @@
+{
+  "А": [
+    {
+      "id": "c1512165",
+      "description": "Красноярский край",
+      "country": "RU",
+      "name": "Ачинск",
+      "latitude": 56.2694,
+      "longitude": 90.4993
+    },
+    {
+      "id": "c580497",
+      "description": "Астраханская область",
+      "country": "RU",
+      "name": "Астрахань",
+      "latitude": 46.34968,
+      "longitude": 48.04076
+    },
+    {
+      "id": "c580660",
+      "description": "Челябинская область",
+      "country": "RU",
+      "name": "Аша",
+      "latitude": 54.9973,
+      "longitude": 57.2722
+    },
+    {
+      "id": "c580724",
+      "description": "Нижегородская область",
+      "country": "RU",
+      "name": "Арзамас",
+      "latitude": 55.39485,
+      "longitude": 43.83992
+    },
+    {
+      "id": "c580969",
+      "description": "Краснодарский край",
+      "country": "RU",
+      "name": "Архипо-Осиповка",
+      "latitude": 44.37194,
+      "longitude": 38.52972
+    },
+    {
+      "id": "c581049",
+      "description": "Архангельская область",
+      "country": "RU",
+      "name": "Архангельск",
+      "latitude": 64.5401,
+      "longitude": 40.5433
+    },
+    {
+      "id": "c581123",
+      "description": "Вологодская область",
+      "country": "RU",
+      "name": "Аргуново",
+      "latitude": 59.86596,
+      "longitude": 38.90761
+    },
+    {
+      "id": "c582182",
+      "description": "Краснодарский край",
+      "country": "RU",
+      "name": "Анапа",
+      "latitude": 44.89497,
+      "longitude": 37.31623
+    },
+    {
+      "id": "c582432",
+      "description": "Республика Татарстан",
+      "country": "RU",
+      "name": "Альметьевск",
+      "latitude": 54.90442,
+      "longitude": 52.3154
+    },
+    {
+      "id": "c582752",
+      "description": "Волгоградская область",
+      "country": "RU",
+      "name": "Алексиковский",
+      "latitude": 50.942,
+      "longitude": 42.3208
+    },
+    {
+      "id": "c582775",
+      "description": "Республика Татарстан",
+      "country": "RU",
+      "name": "Алексеевское",
+      "latitude": 55.30706,
+      "longitude": 50.11353
+    },
+    {
+      "id": "c584003",
+      "description": "Краснодарский край",
+      "country": "RU",
+      "name": "Агой",
+      "latitude": 44.1466,
+      "longitude": 39.0373
+    },
+    {
+      "id": "c584243",
+      "description": "Краснодарский край",
+      "country": "RU",
+      "name": "Адлер",
+      "latitude": 43.42896,
+      "longitude": 39.92391
+    },
+    {
+      "id": "c584471",
+      "description": "Оренбургская область",
+      "country": "RU",
+      "name": "Абдулино",
+      "latitude": 53.7,
+      "longitude": 53.66667
+    },
+    {
+      "id": "c601084",
+      "description": "Alytus County",
+      "country": "LT",
+      "name": "Алитус",
+      "latitude": 54.39635,
+      "longitude": 24.04142
+    },
+    {
+      "id": "c6300971",
+      "description": "Ленинградская область",
+      "country": "RU",
+      "name": "Аэропорт Пулково",
+      "latitude": 59.80029,
+      "longitude": 30.2625
+    },
+    {
+      "id": "c630644",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Аксаковщина",
+      "latitude": 53.9382,
+      "longitude": 27.0911
+    },
+    {
+      "id": "c630653",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Адамово",
+      "latitude": 54.1378,
+      "longitude": 26.3126
+    },
+    {
+      "id": "c713259",
+      "description": "Луганская область",
+      "country": "UA",
+      "name": "Антрацит",
+      "latitude": 48.11503,
+      "longitude": 39.09128
+    },
+    {
+      "id": "c713513",
+      "description": "Республика Крым",
+      "country": "UA",
+      "name": "Алушта",
+      "latitude": 44.67728,
+      "longitude": 34.4097
+    },
+    {
+      "id": "c713716",
+      "description": "Луганская область",
+      "country": "RU",
+      "name": "Алчевск",
+      "latitude": 48.46893,
+      "longitude": 38.81669
+    },
+    {
+      "id": "c8047147",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Ахремовичи",
+      "latitude": 53.3304,
+      "longitude": 26.6628
+    }
+  ],
+  "Б": [
+    {
+      "id": "c2944387",
+      "description": "Бремен",
+      "country": "DE",
+      "name": "Бремен",
+      "latitude": 53.08333,
+      "longitude": 8.83333
+    },
+    {
+      "id": "c2950159",
+      "description": "Берлин",
+      "country": "DE",
+      "name": "Берлин",
+      "latitude": 52.52437,
+      "longitude": 13.41053
+    },
+    {
+      "id": "c3078610",
+      "description": "Южноморавский край",
+      "country": "CZ",
+      "name": "Брно",
+      "latitude": 49.19522,
+      "longitude": 16.60796
+    },
+    {
+      "id": "c3102014",
+      "description": "Куявско-Поморское воеводство",
+      "country": "PL",
+      "name": "Быдгощ",
+      "latitude": 53.1235,
+      "longitude": 18.00762
+    },
+    {
+      "id": "c3435910",
+      "description": "Buenos Aires F.D.",
+      "country": "AR",
+      "name": "Буэнос-Айрес",
+      "latitude": -34.61315,
+      "longitude": -58.37723
+    },
+    {
+      "id": "c572154",
+      "description": "Новгородская Область",
+      "country": "RU",
+      "name": "Боровичи",
+      "latitude": 58.38778,
+      "longitude": 33.91546
+    },
+    {
+      "id": "c572525",
+      "description": "Воронежская область",
+      "country": "RU",
+      "name": "Борисоглебск",
+      "latitude": 51.36713,
+      "longitude": 42.08494
+    },
+    {
+      "id": "c575410",
+      "description": "Ленинградская область",
+      "country": "RU",
+      "name": "Бокситогорск",
+      "latitude": 59.47405,
+      "longitude": 33.84853
+    },
+    {
+      "id": "c577893",
+      "description": "Краснодарский край",
+      "country": "RU",
+      "name": "Белореченск",
+      "latitude": 44.77127,
+      "longitude": 39.87879
+    },
+    {
+      "id": "c578072",
+      "description": "Белгородская область",
+      "country": "RU",
+      "name": "Белгород",
+      "latitude": 50.61074,
+      "longitude": 36.58015
+    },
+    {
+      "id": "c578120",
+      "description": "Башкортостан",
+      "country": "RU",
+      "name": "Белебей",
+      "latitude": 54.11667,
+      "longitude": 54.11667
+    },
+    {
+      "id": "c578155",
+      "description": "Ростовская область",
+      "country": "RU",
+      "name": "Белая Калитва",
+      "latitude": 48.18585,
+      "longitude": 40.77424
+    },
+    {
+      "id": "c579492",
+      "description": "Саратовская область",
+      "country": "RU",
+      "name": "Балаково",
+      "latitude": 52.02782,
+      "longitude": 47.8007
+    },
+    {
+      "id": "c579574",
+      "description": "Республика Кабардино-Балкария",
+      "country": "RU",
+      "name": "Баксан",
+      "latitude": 43.68806,
+      "longitude": 43.53694
+    },
+    {
+      "id": "c615532",
+      "description": "Автономная Республика Аджария",
+      "country": "GE",
+      "name": "Батуми",
+      "latitude": 41.64228,
+      "longitude": 41.63392
+    },
+    {
+      "id": "c629634",
+      "description": "Брестская Область",
+      "country": "BY",
+      "name": "Брест",
+      "latitude": 52.09755,
+      "longitude": 23.68775
+    },
+    {
+      "id": "c629986",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Большая Берестовица",
+      "latitude": 53.196,
+      "longitude": 24.0166
+    },
+    {
+      "id": "c630057",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Бобровичи",
+      "latitude": 54.0481,
+      "longitude": 26.5708
+    },
+    {
+      "id": "c630197",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Березино",
+      "latitude": 53.8391,
+      "longitude": 28.9879
+    },
+    {
+      "id": "c630343",
+      "description": "Витебская Область",
+      "country": "BY",
+      "name": "Бегомль",
+      "latitude": 54.7316,
+      "longitude": 28.0577
+    },
+    {
+      "id": "c630376",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Борисов",
+      "latitude": 54.2279,
+      "longitude": 28.505
+    },
+    {
+      "id": "c630429",
+      "description": "Брестская Область",
+      "country": "BY",
+      "name": "Барановичи",
+      "latitude": 53.1327,
+      "longitude": 26.0139
+    },
+    {
+      "id": "c776069",
+      "description": "Подляское воеводство",
+      "country": "PL",
+      "name": "Белосток",
+      "latitude": 53.13333,
+      "longitude": 23.16433
+    },
+    {
+      "id": "c776175",
+      "description": "Люблинское воеводство",
+      "country": "PL",
+      "name": "Бяла-Подляска",
+      "latitude": 52.03238,
+      "longitude": 23.11652
+    },
+    {
+      "id": "c8247183",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Боровляны",
+      "latitude": 54.0022,
+      "longitude": 27.6754
+    }
+  ],
+  "В": [
+    {
+      "id": "c3081368",
+      "description": "Нижнесилезское воеводство",
+      "country": "PL",
+      "name": "Вроцлав",
+      "latitude": 51.1,
+      "longitude": 17.03333
+    },
+    {
+      "id": "c470546",
+      "description": "Ленинградская область",
+      "country": "RU",
+      "name": "Выборг",
+      "latitude": 60.70763,
+      "longitude": 28.75283
+    },
+    {
+      "id": "c472459",
+      "description": "Вологодская область",
+      "country": "RU",
+      "name": "Вологда",
+      "latitude": 59.2239,
+      "longitude": 39.88398
+    },
+    {
+      "id": "c472757",
+      "description": "Волгоградская область",
+      "country": "RU",
+      "name": "Волгоград",
+      "latitude": 48.71939,
+      "longitude": 44.50183
+    },
+    {
+      "id": "c593116",
+      "description": "Вильнюсский уезд",
+      "country": "LT",
+      "name": "Вильнюс",
+      "latitude": 54.68916,
+      "longitude": 25.2798
+    },
+    {
+      "id": "c619979",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Вороново",
+      "latitude": 54.1492,
+      "longitude": 25.3112
+    },
+    {
+      "id": "c620005",
+      "description": "Гомельская Область",
+      "country": "BY",
+      "name": "Ворновка",
+      "latitude": 53.0256,
+      "longitude": 30.8632
+    },
+    {
+      "id": "c620023",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Волпа",
+      "latitude": 53.3677,
+      "longitude": 24.3638
+    },
+    {
+      "id": "c620079",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Волковичи",
+      "latitude": 53.5847,
+      "longitude": 25.9564
+    },
+    {
+      "id": "c620127",
+      "description": "Витебская Область",
+      "country": "BY",
+      "name": "Витебск",
+      "latitude": 55.1904,
+      "longitude": 30.2049
+    },
+    {
+      "id": "c620141",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Вишов",
+      "latitude": 53.9805,
+      "longitude": 29.9925
+    },
+    {
+      "id": "c620147",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Вишнево",
+      "latitude": 54.139,
+      "longitude": 26.2042
+    },
+    {
+      "id": "c620181",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Вилейка",
+      "latitude": 54.4914,
+      "longitude": 26.9111
+    },
+    {
+      "id": "c620191",
+      "description": "Витебская Область",
+      "country": "BY",
+      "name": "Видзы",
+      "latitude": 55.3945,
+      "longitude": 26.6305
+    },
+    {
+      "id": "c620217",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Веть",
+      "latitude": 53.2939,
+      "longitude": 30.4077
+    },
+    {
+      "id": "c620230",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Вертелишки",
+      "latitude": 53.70032,
+      "longitude": 24.01062
+    },
+    {
+      "id": "c620263",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Верейки",
+      "latitude": 53.2506,
+      "longitude": 24.1931
+    },
+    {
+      "id": "c620273",
+      "description": "Гомельская Область",
+      "country": "BY",
+      "name": "Вересница",
+      "latitude": 52.0852,
+      "longitude": 27.6432
+    },
+    {
+      "id": "c620391",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Волковыск",
+      "latitude": 53.1561,
+      "longitude": 24.4513
+    },
+    {
+      "id": "c620435",
+      "description": "Витебская Область",
+      "country": "BY",
+      "name": "Вереньки",
+      "latitude": 54.9968,
+      "longitude": 26.7461
+    },
+    {
+      "id": "c620445",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Воложин",
+      "latitude": 54.0892,
+      "longitude": 26.5266
+    },
+    {
+      "id": "c756135",
+      "description": "Мазовецкое воеводство",
+      "country": "PL",
+      "name": "Варшава",
+      "latitude": 52.22977,
+      "longitude": 21.01178
+    },
+    {
+      "id": "c814150",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Воронино",
+      "latitude": 53.5315,
+      "longitude": 30.3555
+    },
+    {
+      "id": "c815389",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Войнилы",
+      "latitude": 53.7966,
+      "longitude": 30.7402
+    }
+  ],
+  "Г": [
+    {
+      "id": "c2910831",
+      "description": "Нижняя Саксония",
+      "country": "DE",
+      "name": "Ганновер",
+      "latitude": 52.37052,
+      "longitude": 9.73322
+    },
+    {
+      "id": "c2911298",
+      "description": "Free and Hanseatic City of Hamburg",
+      "country": "DE",
+      "name": "Гамбург",
+      "latitude": 53.55073,
+      "longitude": 9.99302
+    },
+    {
+      "id": "c3099424",
+      "description": "Поморское воеводство",
+      "country": "PL",
+      "name": "Гдыня",
+      "latitude": 54.51889,
+      "longitude": 18.53188
+    },
+    {
+      "id": "c3099434",
+      "description": "Поморское воеводство",
+      "country": "PL",
+      "name": "Гданьск",
+      "latitude": 54.35227,
+      "longitude": 18.64912
+    },
+    {
+      "id": "c561667",
+      "description": "Краснодарский край",
+      "country": "RU",
+      "name": "Геленджик",
+      "latitude": 44.5622,
+      "longitude": 38.0848
+    },
+    {
+      "id": "c561679",
+      "description": "Псковская область",
+      "country": "RU",
+      "name": "Гдов",
+      "latitude": 58.74424,
+      "longitude": 27.81977
+    },
+    {
+      "id": "c561887",
+      "description": "Ленинградская область",
+      "country": "RU",
+      "name": "Гатчина",
+      "latitude": 59.57639,
+      "longitude": 30.12833
+    },
+    {
+      "id": "c627904",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Гродно",
+      "latitude": 53.6884,
+      "longitude": 23.8258
+    },
+    {
+      "id": "c627905",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Горки",
+      "latitude": 54.2862,
+      "longitude": 30.9863
+    },
+    {
+      "id": "c627907",
+      "description": "Гомельская Область",
+      "country": "BY",
+      "name": "Гомель",
+      "latitude": 52.4345,
+      "longitude": 30.9754
+    },
+    {
+      "id": "c627908",
+      "description": "Витебская Область",
+      "country": "BY",
+      "name": "Глубокое",
+      "latitude": 55.1384,
+      "longitude": 27.6905
+    },
+    {
+      "id": "c627909",
+      "description": "Брестская Область",
+      "country": "BY",
+      "name": "Ганцевичи",
+      "latitude": 52.758,
+      "longitude": 26.43
+    },
+    {
+      "id": "c627987",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Гудевичи",
+      "latitude": 53.37451,
+      "longitude": 24.17078
+    },
+    {
+      "id": "c628155",
+      "description": "Витебская Область",
+      "country": "BY",
+      "name": "Городок",
+      "latitude": 55.4624,
+      "longitude": 29.9845
+    },
+    {
+      "id": "c628171",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Городище",
+      "latitude": 54.1893,
+      "longitude": 30.6231
+    },
+    {
+      "id": "c628182",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Городея",
+      "latitude": 53.3121,
+      "longitude": 26.538
+    },
+    {
+      "id": "c628209",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Горно",
+      "latitude": 54.6062,
+      "longitude": 27.7304
+    },
+    {
+      "id": "c628295",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Голынка",
+      "latitude": 53.2133,
+      "longitude": 25.0407
+    },
+    {
+      "id": "c628317",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Гольшаны",
+      "latitude": 54.2585,
+      "longitude": 26.0144
+    },
+    {
+      "id": "c628332",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Головчин",
+      "latitude": 54.0601,
+      "longitude": 29.9184
+    },
+    {
+      "id": "c628346",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Гольни",
+      "latitude": 53.3032,
+      "longitude": 24.0161
+    },
+    {
+      "id": "c628402",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Глухская Селиба",
+      "latitude": 53.6587,
+      "longitude": 30.0296
+    },
+    {
+      "id": "c628491",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Гайна",
+      "latitude": 54.2511,
+      "longitude": 27.6992
+    },
+    {
+      "id": "c628522",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Гостиловцы",
+      "latitude": 53.73586,
+      "longitude": 24.96882
+    },
+    {
+      "id": "c8144921",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Гоньки",
+      "latitude": 53.1275,
+      "longitude": 25.2395
+    }
+  ],
+  "Д": [
+    {
+      "id": "c2934246",
+      "description": "Северный Рейн-Вестфалия",
+      "country": "DE",
+      "name": "Дюссельдорф",
+      "latitude": 51.22172,
+      "longitude": 6.77616
+    },
+    {
+      "id": "c460413",
+      "description": "Даугавпилсский край",
+      "country": "LV",
+      "name": "Даугавпилс",
+      "latitude": 55.88333,
+      "longitude": 26.53333
+    },
+    {
+      "id": "c565368",
+      "description": "Ленинградская область",
+      "country": "RU",
+      "name": "Доможилово",
+      "latitude": 60.46943,
+      "longitude": 33.0914
+    },
+    {
+      "id": "c599757",
+      "description": "Alytus County",
+      "country": "LT",
+      "name": "Друскининкай",
+      "latitude": 54.01573,
+      "longitude": 23.98703
+    },
+    {
+      "id": "c628656",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Дыхновичи",
+      "latitude": 53.2147,
+      "longitude": 24.3146
+    },
+    {
+      "id": "c628658",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Дятлово",
+      "latitude": 53.4631,
+      "longitude": 25.4068
+    },
+    {
+      "id": "c628694",
+      "description": "Брестская Область",
+      "country": "BY",
+      "name": "Дворец",
+      "latitude": 52.2722,
+      "longitude": 26.9577
+    },
+    {
+      "id": "c628826",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Дубно",
+      "latitude": 53.4426,
+      "longitude": 24.37764
+    },
+    {
+      "id": "c628884",
+      "description": "Брестская Область",
+      "country": "BY",
+      "name": "Дрогичин",
+      "latitude": 52.1874,
+      "longitude": 25.1597
+    },
+    {
+      "id": "c628923",
+      "description": "Гомельская Область",
+      "country": "BY",
+      "name": "Довск",
+      "latitude": 53.1571,
+      "longitude": 30.4601
+    },
+    {
+      "id": "c628947",
+      "description": "Витебская Область",
+      "country": "BY",
+      "name": "Домжерицы",
+      "latitude": 54.7392,
+      "longitude": 28.3168
+    },
+    {
+      "id": "c628990",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Долгиново",
+      "latitude": 54.6434,
+      "longitude": 27.4752
+    },
+    {
+      "id": "c629002",
+      "description": "Витебская Область",
+      "country": "BY",
+      "name": "Докшицы",
+      "latitude": 54.8918,
+      "longitude": 27.7667
+    },
+    {
+      "id": "c629055",
+      "description": "Витебская Область",
+      "country": "BY",
+      "name": "Дисна",
+      "latitude": 55.5676,
+      "longitude": 28.2076
+    },
+    {
+      "id": "c629095",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Деречин",
+      "latitude": 53.2472,
+      "longitude": 24.9182
+    },
+    {
+      "id": "c629110",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Дениски",
+      "latitude": 54.2621,
+      "longitude": 27.4969
+    },
+    {
+      "id": "c629127",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Демброво",
+      "latitude": 53.63836,
+      "longitude": 24.47642
+    },
+    {
+      "id": "c629159",
+      "description": "Брестская Область",
+      "country": "BY",
+      "name": "Давид-Городок",
+      "latitude": 52.0566,
+      "longitude": 27.2161
+    },
+    {
+      "id": "c629165",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Дашки",
+      "latitude": 54.2463,
+      "longitude": 27.4766
+    },
+    {
+      "id": "c709717",
+      "description": "Донецкая область",
+      "country": "UA",
+      "name": "Донецк",
+      "latitude": 48.023,
+      "longitude": 37.80224
+    },
+    {
+      "id": "c8020014",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Дещенка",
+      "latitude": 53.5798,
+      "longitude": 27.4615
+    },
+    {
+      "id": "c831396",
+      "description": "Краснодарский край",
+      "country": "RU",
+      "name": "Джубга",
+      "latitude": 44.31667,
+      "longitude": 38.7
+    }
+  ],
+  "Е": [
+    {
+      "id": "c1486209",
+      "description": "Свердловская область",
+      "country": "RU",
+      "name": "Екатеринбург",
+      "latitude": 56.8519,
+      "longitude": 60.6122
+    },
+    {
+      "id": "c467978",
+      "description": "Липецкая область",
+      "country": "RU",
+      "name": "Елец",
+      "latitude": 52.62366,
+      "longitude": 38.50169
+    },
+    {
+      "id": "c468082",
+      "description": "Республика Татарстан",
+      "country": "RU",
+      "name": "Елабуга",
+      "latitude": 55.76127,
+      "longitude": 52.06493
+    },
+    {
+      "id": "c619573",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Евдокимовичи",
+      "latitude": 54.0384,
+      "longitude": 30.4785
+    },
+    {
+      "id": "c619585",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Ермоловичи",
+      "latitude": 53.9833,
+      "longitude": 30.0652
+    },
+    {
+      "id": "c619591",
+      "description": "Гомельская Область",
+      "country": "BY",
+      "name": "Еремино",
+      "latitude": 52.5146,
+      "longitude": 30.935
+    },
+    {
+      "id": "c625521",
+      "description": "",
+      "country": "BY",
+      "name": "Езерище",
+      "latitude": 55.83333,
+      "longitude": 30.03333
+    }
+  ],
+  "Ё": [],
+  "Ж": [
+    {
+      "id": "c462914",
+      "description": "Калужская область",
+      "country": "RU",
+      "name": "Жиздра",
+      "latitude": 53.74596,
+      "longitude": 34.73951
+    },
+    {
+      "id": "c618800",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Жодино",
+      "latitude": 54.0985,
+      "longitude": 28.3331
+    },
+    {
+      "id": "c618806",
+      "description": "Гомельская Область",
+      "country": "BY",
+      "name": "Жлобин",
+      "latitude": 52.8926,
+      "longitude": 30.024
+    },
+    {
+      "id": "c618810",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Житомля",
+      "latitude": 53.6328,
+      "longitude": 24.1026
+    },
+    {
+      "id": "c618815",
+      "description": "Гомельская Область",
+      "country": "BY",
+      "name": "Житковичи",
+      "latitude": 52.2168,
+      "longitude": 27.8561
+    },
+    {
+      "id": "c618818",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Жировичи",
+      "latitude": 53.0131,
+      "longitude": 25.3443
+    },
+    {
+      "id": "c618850",
+      "description": "Брестская Область",
+      "country": "BY",
+      "name": "Жеребковичи",
+      "latitude": 53.0705,
+      "longitude": 26.4449
+    },
+    {
+      "id": "c618852",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Жердяжье",
+      "latitude": 54.5334,
+      "longitude": 27.8615
+    },
+    {
+      "id": "c618863",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Желудок",
+      "latitude": 53.5974,
+      "longitude": 24.9828
+    },
+    {
+      "id": "c759734",
+      "description": "Подкарпатское воеводство",
+      "country": "PL",
+      "name": "Жешув",
+      "latitude": 50.04132,
+      "longitude": 21.99901
+    },
+    {
+      "id": "c8028894",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Жукевичи",
+      "latitude": 53.29904,
+      "longitude": 24.05506
+    },
+    {
+      "id": "c8247084",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Жестиное",
+      "latitude": 54.5183,
+      "longitude": 27.8286
+    }
+  ],
+  "З": [
+    {
+      "id": "c461910",
+      "description": "Ростовская область",
+      "country": "RU",
+      "name": "Зверево",
+      "latitude": 48.02108,
+      "longitude": 40.12282
+    },
+    {
+      "id": "c465543",
+      "description": "Республика Татарстан",
+      "country": "RU",
+      "name": "Заинск",
+      "latitude": 55.3195,
+      "longitude": 52.06942
+    },
+    {
+      "id": "c618683",
+      "description": "Гомельская Область",
+      "country": "BY",
+      "name": "Звонец",
+      "latitude": 53.2321,
+      "longitude": 30.4304
+    },
+    {
+      "id": "c618704",
+      "description": "Брестская Область",
+      "country": "BY",
+      "name": "Зубелевичи",
+      "latitude": 53.0548,
+      "longitude": 26.3504
+    },
+    {
+      "id": "c618925",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Зеньковичи",
+      "latitude": 53.4985,
+      "longitude": 27.2476
+    },
+    {
+      "id": "c618932",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Зельва",
+      "latitude": 53.15064,
+      "longitude": 24.81338
+    },
+    {
+      "id": "c619108",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Заречье",
+      "latitude": 54.3995,
+      "longitude": 27.6222
+    },
+    {
+      "id": "c619146",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Заполье",
+      "latitude": 54.4571,
+      "longitude": 27.5415
+    },
+    {
+      "id": "c619166",
+      "description": "Гомельская Область",
+      "country": "BY",
+      "name": "Запесочье",
+      "latitude": 52.075,
+      "longitude": 27.7103
+    },
+    {
+      "id": "c619199",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Занарочь",
+      "latitude": 54.8035,
+      "longitude": 26.7757
+    },
+    {
+      "id": "c619219",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Замосточье",
+      "latitude": 54.6512,
+      "longitude": 27.9677
+    },
+    {
+      "id": "c619295",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Залесье",
+      "latitude": 54.3983,
+      "longitude": 27.345
+    },
+    {
+      "id": "c619318",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Заходы",
+      "latitude": 54.0423,
+      "longitude": 30.4587
+    },
+    {
+      "id": "c619393",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Задорье",
+      "latitude": 54.592,
+      "longitude": 27.7669
+    },
+    {
+      "id": "c619438",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Заборье",
+      "latitude": 54.4996,
+      "longitude": 27.8658
+    },
+    {
+      "id": "c619486",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Заболоть",
+      "latitude": 53.9258,
+      "longitude": 24.7965
+    },
+    {
+      "id": "c686818",
+      "description": "Донецкая область",
+      "country": "UA",
+      "name": "Зугрэс",
+      "latitude": 48.0114,
+      "longitude": 38.26444
+    },
+    {
+      "id": "c8076968",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Заберезино",
+      "latitude": 53.71194,
+      "longitude": 24.30178
+    },
+    {
+      "id": "c8246964",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Заболотье",
+      "latitude": 54.5315,
+      "longitude": 27.4009
+    },
+    {
+      "id": "c8279796",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Запокулье",
+      "latitude": 53.9879,
+      "longitude": 29.8008
+    },
+    {
+      "id": "c8281171",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Загорье",
+      "latitude": 54.164,
+      "longitude": 30.3221
+    },
+    {
+      "id": "c8281187",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Защита",
+      "latitude": 54.1183,
+      "longitude": 30.3409
+    },
+    {
+      "id": "c8282478",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Загорское",
+      "latitude": 54.2867,
+      "longitude": 26.9902
+    },
+    {
+      "id": "c8282738",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Запурье",
+      "latitude": 54.1317,
+      "longitude": 26.2379
+    },
+    {
+      "id": "c8282776",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Замостяны",
+      "latitude": 54.1161,
+      "longitude": 26.412
+    }
+  ],
+  "И": [
+    {
+      "id": "c1505383",
+      "description": "Кемеровская область",
+      "country": "RU",
+      "name": "Итатский",
+      "latitude": 56.07,
+      "longitude": 89.03694
+    },
+    {
+      "id": "c1505429",
+      "description": "Новосибирская область",
+      "country": "RU",
+      "name": "Искитим",
+      "latitude": 54.6366,
+      "longitude": 83.3045
+    },
+    {
+      "id": "c555624",
+      "description": "Ленинградская область",
+      "country": "RU",
+      "name": "Ивангород",
+      "latitude": 59.37155,
+      "longitude": 28.21625
+    },
+    {
+      "id": "c556010",
+      "description": "Республика Татарстан",
+      "country": "RU",
+      "name": "Исергапово",
+      "latitude": 54.33293,
+      "longitude": 53.38683
+    },
+    {
+      "id": "c556212",
+      "description": "Вологодская область",
+      "country": "RU",
+      "name": "Ирданово",
+      "latitude": 59.5498,
+      "longitude": 45.51174
+    },
+    {
+      "id": "c556386",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Индура",
+      "latitude": 53.4605,
+      "longitude": 23.8823
+    },
+    {
+      "id": "c556416",
+      "description": "Карельская республика",
+      "country": "RU",
+      "name": "Импилахти",
+      "latitude": 61.67063,
+      "longitude": 31.1572
+    },
+    {
+      "id": "c556961",
+      "description": "Волгоградская область",
+      "country": "RU",
+      "name": "Иловля",
+      "latitude": 49.30334,
+      "longitude": 43.97965
+    },
+    {
+      "id": "c557136",
+      "description": "Карельская республика",
+      "country": "RU",
+      "name": "Ильинский",
+      "latitude": 61.01346,
+      "longitude": 32.66631
+    },
+    {
+      "id": "c557340",
+      "description": "Оренбургская область",
+      "country": "RU",
+      "name": "Илек",
+      "latitude": 51.52709,
+      "longitude": 53.38306
+    },
+    {
+      "id": "c557557",
+      "description": "Вологодская область",
+      "country": "RU",
+      "name": "Игмас",
+      "latitude": 60.16978,
+      "longitude": 43.77371
+    },
+    {
+      "id": "c627790",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Избище",
+      "latitude": 54.6263,
+      "longitude": 27.6673
+    },
+    {
+      "id": "c627793",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Ивье",
+      "latitude": 53.9299,
+      "longitude": 25.7727
+    },
+    {
+      "id": "c627800",
+      "description": "Брестская Область",
+      "country": "BY",
+      "name": "Ивацевичи",
+      "latitude": 52.709,
+      "longitude": 25.3401
+    },
+    {
+      "id": "c627802",
+      "description": "Гомельская Область",
+      "country": "BY",
+      "name": "Ивашковичи",
+      "latitude": 52.2739,
+      "longitude": 28.796
+    },
+    {
+      "id": "c627811",
+      "description": "Брестская Область",
+      "country": "BY",
+      "name": "Иваново",
+      "latitude": 52.1451,
+      "longitude": 25.5365
+    },
+    {
+      "id": "c627878",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Илья",
+      "latitude": 54.4167,
+      "longitude": 27.2958
+    },
+    {
+      "id": "c627891",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Игрушка",
+      "latitude": 54.4004,
+      "longitude": 29.0499
+    },
+    {
+      "id": "c813137",
+      "description": "Гомельская Область",
+      "country": "BY",
+      "name": "Ильич",
+      "latitude": 53.2614,
+      "longitude": 30.4208
+    }
+  ],
+  "Й": [
+    {
+      "id": "c591893",
+      "description": "Ида-Вирумаа",
+      "country": "EE",
+      "name": "Йыхви",
+      "latitude": 59.35917,
+      "longitude": 27.42111
+    }
+  ],
+  "К": [
+    {
+      "id": "c1504251",
+      "description": "Челябинская область",
+      "country": "RU",
+      "name": "Касли",
+      "latitude": 55.8909,
+      "longitude": 60.7616
+    },
+    {
+      "id": "c3095049",
+      "description": "Западнопоморское воеводство",
+      "country": "PL",
+      "name": "Кошалин",
+      "latitude": 54.19438,
+      "longitude": 16.17222
+    },
+    {
+      "id": "c3096472",
+      "description": "Силезское воеводство",
+      "country": "PL",
+      "name": "Катовице",
+      "latitude": 50.25841,
+      "longitude": 19.02754
+    },
+    {
+      "id": "c538725",
+      "description": "Карельская республика",
+      "country": "RU",
+      "name": "Куркиеки",
+      "latitude": 61.30254,
+      "longitude": 29.89604
+    },
+    {
+      "id": "c539283",
+      "description": "Башкортостан",
+      "country": "RU",
+      "name": "Кумертау",
+      "latitude": 52.76667,
+      "longitude": 55.78333
+    },
+    {
+      "id": "c545277",
+      "description": "Ростовская область",
+      "country": "RU",
+      "name": "Константиновск",
+      "latitude": 47.58278,
+      "longitude": 41.09222
+    },
+    {
+      "id": "c547475",
+      "description": "Брянская область",
+      "country": "RU",
+      "name": "Клинцы",
+      "latitude": 52.76019,
+      "longitude": 32.23935
+    },
+    {
+      "id": "c548392",
+      "description": "Ленинградская область",
+      "country": "RU",
+      "name": "Кировск",
+      "latitude": 59.88101,
+      "longitude": 30.99507
+    },
+    {
+      "id": "c548602",
+      "description": "Ленинградская область",
+      "country": "RU",
+      "name": "Кингисепп",
+      "latitude": 59.37331,
+      "longitude": 28.61343
+    },
+    {
+      "id": "c551487",
+      "description": "Республика Татарстан",
+      "country": "RU",
+      "name": "Казань",
+      "latitude": 55.78874,
+      "longitude": 49.12214
+    },
+    {
+      "id": "c553287",
+      "description": "Волгоградская область",
+      "country": "RU",
+      "name": "Камышин",
+      "latitude": 50.09833,
+      "longitude": 45.41601
+    },
+    {
+      "id": "c553915",
+      "description": "Калужская область",
+      "country": "RU",
+      "name": "Калуга",
+      "latitude": 54.5293,
+      "longitude": 36.27542
+    },
+    {
+      "id": "c554397",
+      "description": "Волгоградская область",
+      "country": "RU",
+      "name": "Калач-на-Дону",
+      "latitude": 48.69099,
+      "longitude": 43.52638
+    },
+    {
+      "id": "c598098",
+      "description": "Klaipėda County",
+      "country": "LT",
+      "name": "Клайпеда",
+      "latitude": 55.7068,
+      "longitude": 21.13912
+    },
+    {
+      "id": "c613762",
+      "description": "Автономная Республика Аджария",
+      "country": "GE",
+      "name": "Кобулети",
+      "latitude": 41.82143,
+      "longitude": 41.77921
+    },
+    {
+      "id": "c626849",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Кошелево",
+      "latitude": 53.5348,
+      "longitude": 25.7225
+    },
+    {
+      "id": "c626939",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Кореличи",
+      "latitude": 53.5648,
+      "longitude": 26.1406
+    },
+    {
+      "id": "c627145",
+      "description": "Брестская Область",
+      "country": "BY",
+      "name": "Кобрин",
+      "latitude": 52.2138,
+      "longitude": 24.3564
+    },
+    {
+      "id": "c627202",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Климовичи",
+      "latitude": 53.6079,
+      "longitude": 31.9586
+    },
+    {
+      "id": "c6553049",
+      "description": "Северный Рейн-Вестфалия",
+      "country": "DE",
+      "name": "Кёльн",
+      "latitude": 50.93835,
+      "longitude": 6.95427
+    },
+    {
+      "id": "c6690154",
+      "description": "Малопольское воеводство",
+      "country": "PL",
+      "name": "Краков",
+      "latitude": 50.07262,
+      "longitude": 19.9325
+    },
+    {
+      "id": "c703448",
+      "description": "Киев",
+      "country": "UA",
+      "name": "Киев",
+      "latitude": 50.45466,
+      "longitude": 30.5238
+    },
+    {
+      "id": "c769250",
+      "description": "Свентокшишское воеводство",
+      "country": "PL",
+      "name": "Кельце",
+      "latitude": 50.87033,
+      "longitude": 20.62752
+    },
+    {
+      "id": "c8028940",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Котчино",
+      "latitude": 53.2771,
+      "longitude": 24.9417
+    }
+  ],
+  "Л": [
+    {
+      "id": "c2998264",
+      "description": "Occitanie",
+      "country": "FR",
+      "name": "Лиму",
+      "latitude": 43.05487,
+      "longitude": 2.22173
+    },
+    {
+      "id": "c3093133",
+      "description": "Лодзинское воеводство",
+      "country": "PL",
+      "name": "Лодзь",
+      "latitude": 51.77058,
+      "longitude": 19.47395
+    },
+    {
+      "id": "c457954",
+      "description": "Лиепая",
+      "country": "LV",
+      "name": "Лиепая",
+      "latitude": 56.50474,
+      "longitude": 21.01085
+    },
+    {
+      "id": "c533690",
+      "description": "Ленинградская область",
+      "country": "RU",
+      "name": "Луга",
+      "latitude": 58.73722,
+      "longitude": 29.84528
+    },
+    {
+      "id": "c534701",
+      "description": "Орловская область",
+      "country": "RU",
+      "name": "Ливны",
+      "latitude": 52.42534,
+      "longitude": 37.60689
+    },
+    {
+      "id": "c536199",
+      "description": "Ленинградская область",
+      "country": "RU",
+      "name": "Ленинградская область",
+      "latitude": 60,
+      "longitude": 32
+    },
+    {
+      "id": "c536625",
+      "description": "Краснодарский край",
+      "country": "RU",
+      "name": "Лазаревское",
+      "latitude": 43.90886,
+      "longitude": 39.33137
+    },
+    {
+      "id": "c625756",
+      "description": "Гомельская Область",
+      "country": "BY",
+      "name": "Лясковичи",
+      "latitude": 52.1176,
+      "longitude": 28.1551
+    },
+    {
+      "id": "c625772",
+      "description": "Брестская Область",
+      "country": "BY",
+      "name": "Ляховичи",
+      "latitude": 53.0388,
+      "longitude": 26.2656
+    },
+    {
+      "id": "c625816",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Лунно",
+      "latitude": 53.4537,
+      "longitude": 24.2614
+    },
+    {
+      "id": "c625818",
+      "description": "Брестская Область",
+      "country": "BY",
+      "name": "Лунинец",
+      "latitude": 52.2472,
+      "longitude": 26.8047
+    },
+    {
+      "id": "c625821",
+      "description": "Брестская Область",
+      "country": "BY",
+      "name": "Лунин",
+      "latitude": 52.3042,
+      "longitude": 26.6403
+    },
+    {
+      "id": "c625905",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Лойки",
+      "latitude": 53.7687,
+      "longitude": 23.7509
+    },
+    {
+      "id": "c625941",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Лоша",
+      "latitude": 53.421,
+      "longitude": 27.4086
+    },
+    {
+      "id": "c625969",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Логовище",
+      "latitude": 53.5336,
+      "longitude": 27.0661
+    },
+    {
+      "id": "c625972",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Логойск",
+      "latitude": 54.2064,
+      "longitude": 27.8512
+    },
+    {
+      "id": "c626081",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Лида",
+      "latitude": 53.88333,
+      "longitude": 25.29972
+    },
+    {
+      "id": "c626179",
+      "description": "Гомельская Область",
+      "country": "BY",
+      "name": "Ленин",
+      "latitude": 52.3402,
+      "longitude": 27.4878
+    },
+    {
+      "id": "c626266",
+      "description": "Брестская Область",
+      "country": "BY",
+      "name": "Логишин",
+      "latitude": 52.339,
+      "longitude": 25.9867
+    },
+    {
+      "id": "c702550",
+      "description": "Львовская область",
+      "country": "UA",
+      "name": "Львов",
+      "latitude": 49.83826,
+      "longitude": 24.02324
+    },
+    {
+      "id": "c702658",
+      "description": "Луганская область",
+      "country": "RU",
+      "name": "Луганск",
+      "latitude": 48.56705,
+      "longitude": 39.31706
+    },
+    {
+      "id": "c765876",
+      "description": "Люблинское воеводство",
+      "country": "PL",
+      "name": "Люблин",
+      "latitude": 51.25,
+      "longitude": 22.56667
+    },
+    {
+      "id": "c8075299",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Луцковляны",
+      "latitude": 53.4426,
+      "longitude": 23.9391
+    },
+    {
+      "id": "c8247401",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Лукавец",
+      "latitude": 54.3243,
+      "longitude": 27.4504
+    },
+    {
+      "id": "c8247407",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Лесной",
+      "latitude": 54.0072,
+      "longitude": 27.6963
+    }
+  ],
+  "М": [
+    {
+      "id": "c1498894",
+      "description": "Челябинская область",
+      "country": "RU",
+      "name": "Миасс",
+      "latitude": 55.045,
+      "longitude": 60.10833
+    },
+    {
+      "id": "c1499350",
+      "description": "Кемеровская область",
+      "country": "RU",
+      "name": "Мариинск",
+      "latitude": 56.21389,
+      "longitude": 87.74722
+    },
+    {
+      "id": "c524901",
+      "description": "Москва",
+      "country": "RU",
+      "name": "Москва",
+      "latitude": 55.75222,
+      "longitude": 37.61556
+    },
+    {
+      "id": "c525162",
+      "description": "Ростовская область",
+      "country": "RU",
+      "name": "Морозовск",
+      "latitude": 48.35502,
+      "longitude": 41.82627
+    },
+    {
+      "id": "c526480",
+      "description": "Ставропольский край",
+      "country": "RU",
+      "name": "Минеральные Воды",
+      "latitude": 44.21028,
+      "longitude": 43.13528
+    },
+    {
+      "id": "c527012",
+      "description": "Волгоградская область",
+      "country": "RU",
+      "name": "Михайловка",
+      "latitude": 50.06,
+      "longitude": 43.2379
+    },
+    {
+      "id": "c527529",
+      "description": "Республика Татарстан",
+      "country": "RU",
+      "name": "Мензелинск",
+      "latitude": 55.72706,
+      "longitude": 53.10258
+    },
+    {
+      "id": "c527717",
+      "description": "Башкортостан",
+      "country": "RU",
+      "name": "Мелеуз",
+      "latitude": 52.96467,
+      "longitude": 55.93277
+    },
+    {
+      "id": "c528293",
+      "description": "Республика Адыгея",
+      "country": "RU",
+      "name": "Майкоп",
+      "latitude": 44.60778,
+      "longitude": 40.10583
+    },
+    {
+      "id": "c529709",
+      "description": "Республика Татарстан",
+      "country": "RU",
+      "name": "Мамадыш",
+      "latitude": 55.71525,
+      "longitude": 51.40797
+    },
+    {
+      "id": "c532096",
+      "description": "Республика Дагестан",
+      "country": "RU",
+      "name": "Махачкала",
+      "latitude": 42.97638,
+      "longitude": 47.50236
+    },
+    {
+      "id": "c597231",
+      "description": "Marijampolė County",
+      "country": "LT",
+      "name": "Мариямполе",
+      "latitude": 54.55991,
+      "longitude": 23.35412
+    },
+    {
+      "id": "c624853",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Мясота",
+      "latitude": 54.2853,
+      "longitude": 27.0443
+    },
+    {
+      "id": "c624861",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Мядель",
+      "latitude": 54.8789,
+      "longitude": 26.9371
+    },
+    {
+      "id": "c624889",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Мстиславль",
+      "latitude": 54.0185,
+      "longitude": 31.7217
+    },
+    {
+      "id": "c624910",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Матьковцы",
+      "latitude": 53.2517,
+      "longitude": 24.1438
+    },
+    {
+      "id": "c625128",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Мир",
+      "latitude": 53.4544,
+      "longitude": 26.467
+    },
+    {
+      "id": "c625144",
+      "description": "Минск",
+      "country": "BY",
+      "name": "Минск",
+      "latitude": 53.9,
+      "longitude": 27.56667
+    },
+    {
+      "id": "c625324",
+      "description": "Гомельская Область",
+      "country": "BY",
+      "name": "Мозырь",
+      "latitude": 52.0495,
+      "longitude": 29.2456
+    },
+    {
+      "id": "c625367",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Мосты",
+      "latitude": 53.4122,
+      "longitude": 24.5387
+    },
+    {
+      "id": "c625625",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Молодечно",
+      "latitude": 54.3167,
+      "longitude": 26.854
+    },
+    {
+      "id": "c625665",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Могилёв",
+      "latitude": 53.9168,
+      "longitude": 30.3449
+    },
+    {
+      "id": "c700829",
+      "description": "Луганская область",
+      "country": "UA",
+      "name": "Молодогвардейск",
+      "latitude": 48.34511,
+      "longitude": 39.65244
+    },
+    {
+      "id": "c701404",
+      "description": "Запорожская область",
+      "country": "UA",
+      "name": "Мелитополь",
+      "latitude": 46.84735,
+      "longitude": 35.38196
+    },
+    {
+      "id": "c701822",
+      "description": "Донецкая область",
+      "country": "UA",
+      "name": "Мариуполь",
+      "latitude": 47.09514,
+      "longitude": 37.54131
+    }
+  ],
+  "Н": [
+    {
+      "id": "c1496747",
+      "description": "Новосибирская область",
+      "country": "RU",
+      "name": "Новосибирск",
+      "latitude": 55.0415,
+      "longitude": 82.9346
+    },
+    {
+      "id": "c1497497",
+      "description": "Красноярский край",
+      "country": "RU",
+      "name": "Нижний Ингаш",
+      "latitude": 56.2003,
+      "longitude": 96.5373
+    },
+    {
+      "id": "c517269",
+      "description": "Брянская область",
+      "country": "RU",
+      "name": "Новозыбков",
+      "latitude": 52.5396,
+      "longitude": 31.9275
+    },
+    {
+      "id": "c518255",
+      "description": "Краснодарский край",
+      "country": "RU",
+      "name": "Новороссийск",
+      "latitude": 44.72439,
+      "longitude": 37.76752
+    },
+    {
+      "id": "c518970",
+      "description": "Ростовская область",
+      "country": "RU",
+      "name": "Новочеркасск",
+      "latitude": 47.42096,
+      "longitude": 40.09185
+    },
+    {
+      "id": "c520555",
+      "description": "Нижегородская область",
+      "country": "RU",
+      "name": "Нижний Новгород",
+      "latitude": 56.32867,
+      "longitude": 44.00205
+    },
+    {
+      "id": "c521118",
+      "description": "Республика Татарстан",
+      "country": "RU",
+      "name": "Нижнекамск",
+      "latitude": 55.63657,
+      "longitude": 51.82447
+    },
+    {
+      "id": "c522377",
+      "description": "Ставропольский край",
+      "country": "RU",
+      "name": "Невинномысск",
+      "latitude": 44.6333,
+      "longitude": 41.9444
+    },
+    {
+      "id": "c523523",
+      "description": "Республика Кабардино-Балкария",
+      "country": "RU",
+      "name": "Нальчик",
+      "latitude": 43.49806,
+      "longitude": 43.61889
+    },
+    {
+      "id": "c590031",
+      "description": "Ида-Вирумаа",
+      "country": "EE",
+      "name": "Нарва",
+      "latitude": 59.37722,
+      "longitude": 28.19028
+    },
+    {
+      "id": "c624320",
+      "description": "Гомельская Область",
+      "country": "BY",
+      "name": "Новый Кривск",
+      "latitude": 53.0768,
+      "longitude": 30.5247
+    },
+    {
+      "id": "c624368",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Новый Двор",
+      "latitude": 53.8136,
+      "longitude": 24.5559
+    },
+    {
+      "id": "c624369",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Новый Двор",
+      "latitude": 52.8302,
+      "longitude": 24.354
+    },
+    {
+      "id": "c624401",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Новоельня",
+      "latitude": 53.4636,
+      "longitude": 25.5846
+    },
+    {
+      "id": "c624700",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Несвиж",
+      "latitude": 53.2189,
+      "longitude": 26.6779
+    },
+    {
+      "id": "c624784",
+      "description": "Витебская Область",
+      "country": "BY",
+      "name": "Новополоцк",
+      "latitude": 55.5318,
+      "longitude": 28.5987
+    },
+    {
+      "id": "c624785",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Новогрудок",
+      "latitude": 53.5942,
+      "longitude": 25.8191
+    },
+    {
+      "id": "c624804",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Нарочь",
+      "latitude": 54.9102,
+      "longitude": 26.708
+    },
+    {
+      "id": "c7931605",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Натальевск",
+      "latitude": 53.7275,
+      "longitude": 28.4325
+    },
+    {
+      "id": "c8072295",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Новопольцы",
+      "latitude": 53.3559,
+      "longitude": 26.7113
+    },
+    {
+      "id": "c8246890",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Нестёрки",
+      "latitude": 54.5202,
+      "longitude": 27.1009
+    },
+    {
+      "id": "c8246991",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Новосёлки",
+      "latitude": 54.3426,
+      "longitude": 27.4458
+    }
+  ],
+  "О": [
+    {
+      "id": "c2856883",
+      "description": "Нижняя Саксония",
+      "country": "DE",
+      "name": "Оснабрюк",
+      "latitude": 52.27264,
+      "longitude": 8.0498
+    },
+    {
+      "id": "c514171",
+      "description": "Псковская область",
+      "country": "RU",
+      "name": "Остров",
+      "latitude": 57.34395,
+      "longitude": 28.35368
+    },
+    {
+      "id": "c515003",
+      "description": "Оренбургская область",
+      "country": "RU",
+      "name": "Оренбург",
+      "latitude": 51.7727,
+      "longitude": 55.0988
+    },
+    {
+      "id": "c515012",
+      "description": "Орловская область",
+      "country": "RU",
+      "name": "Орёл",
+      "latitude": 52.96508,
+      "longitude": 36.07849
+    },
+    {
+      "id": "c515403",
+      "description": "Карельская республика",
+      "country": "RU",
+      "name": "Олонец",
+      "latitude": 60.98475,
+      "longitude": 32.96976
+    },
+    {
+      "id": "c623850",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Озеры",
+      "latitude": 53.7216,
+      "longitude": 24.1836
+    },
+    {
+      "id": "c623860",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Озеро",
+      "latitude": 53.6304,
+      "longitude": 27.454
+    },
+    {
+      "id": "c623861",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Озёрное",
+      "latitude": 52.7082,
+      "longitude": 28.1526
+    },
+    {
+      "id": "c623904",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Острино",
+      "latitude": 53.7322,
+      "longitude": 24.5305
+    },
+    {
+      "id": "c623911",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Островы",
+      "latitude": 53.7335,
+      "longitude": 28.3857
+    },
+    {
+      "id": "c623941",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Островец",
+      "latitude": 54.61378,
+      "longitude": 25.95537
+    },
+    {
+      "id": "c623997",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Осовец",
+      "latitude": 52.8539,
+      "longitude": 28.1963
+    },
+    {
+      "id": "c624034",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Осиповичи",
+      "latitude": 53.3011,
+      "longitude": 28.6386
+    },
+    {
+      "id": "c624079",
+      "description": "Витебская Область",
+      "country": "BY",
+      "name": "Орша",
+      "latitude": 54.5081,
+      "longitude": 30.4172
+    },
+    {
+      "id": "c624122",
+      "description": "Витебская Область",
+      "country": "BY",
+      "name": "Опса",
+      "latitude": 55.5359,
+      "longitude": 26.8238
+    },
+    {
+      "id": "c624125",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Опеньки",
+      "latitude": 54.6628,
+      "longitude": 27.4216
+    },
+    {
+      "id": "c624152",
+      "description": "Брестская Область",
+      "country": "BY",
+      "name": "Ольшаны",
+      "latitude": 52.0777,
+      "longitude": 27.3504
+    },
+    {
+      "id": "c624201",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Октябрь",
+      "latitude": 54.4251,
+      "longitude": 27.7325
+    },
+    {
+      "id": "c624265",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Обухово",
+      "latitude": 53.6051,
+      "longitude": 24.0814
+    },
+    {
+      "id": "c624283",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Обидовичи",
+      "latitude": 53.336,
+      "longitude": 30.4156
+    },
+    {
+      "id": "c630515",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Ошмяны",
+      "latitude": 54.421,
+      "longitude": 25.936
+    },
+    {
+      "id": "c698740",
+      "description": "Одесская область",
+      "country": "UA",
+      "name": "Одесса",
+      "latitude": 46.48572,
+      "longitude": 30.74383
+    },
+    {
+      "id": "c812629",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Окунёвка",
+      "latitude": 54.2092,
+      "longitude": 30.5506
+    },
+    {
+      "id": "c8246971",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Ободовцы",
+      "latitude": 54.4494,
+      "longitude": 27.3029
+    },
+    {
+      "id": "c8281132",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Овсянка",
+      "latitude": 54.2244,
+      "longitude": 30.7852
+    }
+  ],
+  "П": [
+    {
+      "id": "c1000010",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Петриловка",
+      "latitude": 54.036492,
+      "longitude": 26.839278
+    },
+    {
+      "id": "c1520172",
+      "description": "Северо-Казахстанская область",
+      "country": "KZ",
+      "name": "Петропавловск",
+      "latitude": 54.86667,
+      "longitude": 69.15
+    },
+    {
+      "id": "c3067696",
+      "description": "Центрально-Чешская область",
+      "country": "CZ",
+      "name": "Прага",
+      "latitude": 50.08804,
+      "longitude": 14.42076
+    },
+    {
+      "id": "c3088171",
+      "description": "Великопольское воеводство",
+      "country": "PL",
+      "name": "Познань",
+      "latitude": 52.40692,
+      "longitude": 16.92993
+    },
+    {
+      "id": "c504341",
+      "description": "Псковская область",
+      "country": "RU",
+      "name": "Псков",
+      "latitude": 57.8136,
+      "longitude": 28.3496
+    },
+    {
+      "id": "c505269",
+      "description": "Ленинградская область",
+      "country": "RU",
+      "name": "Приморск",
+      "latitude": 60.36622,
+      "longitude": 28.60615
+    },
+    {
+      "id": "c509820",
+      "description": "Карельская республика",
+      "country": "RU",
+      "name": "Петрозаводск",
+      "latitude": 61.78491,
+      "longitude": 34.34691
+    },
+    {
+      "id": "c509826",
+      "description": "Волгоградская область",
+      "country": "RU",
+      "name": "Петров Вал",
+      "latitude": 50.14337,
+      "longitude": 45.20958
+    },
+    {
+      "id": "c509987",
+      "description": "Саратовская область",
+      "country": "RU",
+      "name": "Петровск",
+      "latitude": 52.30639,
+      "longitude": 45.39167
+    },
+    {
+      "id": "c511565",
+      "description": "Пензенская область",
+      "country": "RU",
+      "name": "Пенза",
+      "latitude": 53.20066,
+      "longitude": 45.00464
+    },
+    {
+      "id": "c511785",
+      "description": "Псковская область",
+      "country": "RU",
+      "name": "Печоры",
+      "latitude": 57.81642,
+      "longitude": 27.6119
+    },
+    {
+      "id": "c589709",
+      "description": "Ярвамаа",
+      "country": "EE",
+      "name": "Пайде",
+      "latitude": 58.88556,
+      "longitude": 25.55722
+    },
+    {
+      "id": "c596128",
+      "description": "Panevėžys County",
+      "country": "LT",
+      "name": "Паневежис",
+      "latitude": 55.73333,
+      "longitude": 24.35
+    },
+    {
+      "id": "c623045",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Провожа",
+      "latitude": 53.96884,
+      "longitude": 24.83176
+    },
+    {
+      "id": "c623317",
+      "description": "Витебская Область",
+      "country": "BY",
+      "name": "Полоцк",
+      "latitude": 55.4879,
+      "longitude": 28.7856
+    },
+    {
+      "id": "c623424",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Погородно",
+      "latitude": 54.0973,
+      "longitude": 25.1439
+    },
+    {
+      "id": "c623512",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Плещеницы",
+      "latitude": 54.4235,
+      "longitude": 27.8301
+    },
+    {
+      "id": "c623549",
+      "description": "Брестская Область",
+      "country": "BY",
+      "name": "Пинск",
+      "latitude": 52.1229,
+      "longitude": 26.0951
+    },
+    {
+      "id": "c623581",
+      "description": "Гомельская Область",
+      "country": "BY",
+      "name": "Петриков",
+      "latitude": 52.1289,
+      "longitude": 28.4921
+    },
+    {
+      "id": "c623646",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Першай",
+      "latitude": 54.0304,
+      "longitude": 26.6832
+    },
+    {
+      "id": "c623732",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Павлово",
+      "latitude": 53.2616,
+      "longitude": 25.2868
+    },
+    {
+      "id": "c623760",
+      "description": "Витебская Область",
+      "country": "BY",
+      "name": "Поставы",
+      "latitude": 55.11676,
+      "longitude": 26.83263
+    },
+    {
+      "id": "c8077093",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Прудяны",
+      "latitude": 53.834,
+      "longitude": 24.6375
+    }
+  ],
+  "Р": [
+    {
+      "id": "c456172",
+      "description": "Рига",
+      "country": "LV",
+      "name": "Рига",
+      "latitude": 56.946,
+      "longitude": 24.10589
+    },
+    {
+      "id": "c500004",
+      "description": "Ярославская область",
+      "country": "RU",
+      "name": "Рыбинск",
+      "latitude": 58.0446,
+      "longitude": 38.84259
+    },
+    {
+      "id": "c501175",
+      "description": "Ростовская область",
+      "country": "RU",
+      "name": "Ростов-на-Дону",
+      "latitude": 47.23135,
+      "longitude": 39.72328
+    },
+    {
+      "id": "c502540",
+      "description": "Башкортостан",
+      "country": "RU",
+      "name": "Раевский",
+      "latitude": 54.0658,
+      "longitude": 54.9468
+    },
+    {
+      "id": "c589165",
+      "description": "Ляэне-Вирумаа",
+      "country": "EE",
+      "name": "Раквере",
+      "latitude": 59.34639,
+      "longitude": 26.35583
+    },
+    {
+      "id": "c622455",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Рыжковичи",
+      "latitude": 54.1799,
+      "longitude": 30.319
+    },
+    {
+      "id": "c622571",
+      "description": "Витебская Область",
+      "country": "BY",
+      "name": "Рудня",
+      "latitude": 54.7806,
+      "longitude": 28.6225
+    },
+    {
+      "id": "c622595",
+      "description": "Гомельская Область",
+      "country": "BY",
+      "name": "Рудня",
+      "latitude": 52.1821,
+      "longitude": 27.9503
+    },
+    {
+      "id": "c622619",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Руда Яворская",
+      "latitude": 53.4015,
+      "longitude": 25.1112
+    },
+    {
+      "id": "c622667",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Рожанка",
+      "latitude": 53.536,
+      "longitude": 24.7365
+    },
+    {
+      "id": "c622700",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Россь",
+      "latitude": 53.28411,
+      "longitude": 24.40721
+    },
+    {
+      "id": "c622739",
+      "description": "Гомельская Область",
+      "country": "BY",
+      "name": "Рогачев",
+      "latitude": 53.0934,
+      "longitude": 30.0495
+    },
+    {
+      "id": "c622744",
+      "description": "",
+      "country": "BY",
+      "name": "Родевщина",
+      "latitude": 54.1,
+      "longitude": 26.61667
+    },
+    {
+      "id": "c622769",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Репля",
+      "latitude": 53.31096,
+      "longitude": 24.20139
+    },
+    {
+      "id": "c622794",
+      "description": "Гомельская Область",
+      "country": "BY",
+      "name": "Речица",
+      "latitude": 52.3617,
+      "longitude": 30.3916
+    },
+    {
+      "id": "c622796",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Речки",
+      "latitude": 54.5836,
+      "longitude": 27.0953
+    },
+    {
+      "id": "c622869",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Радунь",
+      "latitude": 54.0517,
+      "longitude": 24.9976
+    },
+    {
+      "id": "c622877",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Радошковичи",
+      "latitude": 54.1554,
+      "longitude": 27.2412
+    },
+    {
+      "id": "c622901",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Рабунь",
+      "latitude": 54.5032,
+      "longitude": 27.1525
+    },
+    {
+      "id": "c8144933",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Розановщина",
+      "latitude": 53.1179,
+      "longitude": 25.2958
+    },
+    {
+      "id": "c8247065",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Росохи",
+      "latitude": 54.4428,
+      "longitude": 27.6906
+    },
+    {
+      "id": "c8281172",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Реполово",
+      "latitude": 54.1327,
+      "longitude": 30.3425
+    }
+  ],
+  "С": [
+    {
+      "id": "c3448439",
+      "description": "São Paulo",
+      "country": "BR",
+      "name": "Сан-Паулу",
+      "latitude": -23.5475,
+      "longitude": -46.63611
+    },
+    {
+      "id": "c485239",
+      "description": "Республика Коми",
+      "country": "RU",
+      "name": "Сыктывкар",
+      "latitude": 61.664,
+      "longitude": 50.815
+    },
+    {
+      "id": "c485558",
+      "description": "Ленинградская область",
+      "country": "RU",
+      "name": "Старая Слобода",
+      "latitude": 60.7797,
+      "longitude": 33.31706
+    },
+    {
+      "id": "c486071",
+      "description": "Волгоградская область",
+      "country": "RU",
+      "name": "Суровикино",
+      "latitude": 48.60734,
+      "longitude": 42.84621
+    },
+    {
+      "id": "c487495",
+      "description": "Башкортостан",
+      "country": "RU",
+      "name": "Стерлитамак",
+      "latitude": 53.62462,
+      "longitude": 55.95015
+    },
+    {
+      "id": "c491687",
+      "description": "Смоленская область",
+      "country": "RU",
+      "name": "Смоленск",
+      "latitude": 54.7818,
+      "longitude": 32.0401
+    },
+    {
+      "id": "c492162",
+      "description": "Ленинградская область",
+      "country": "RU",
+      "name": "Сланцы",
+      "latitude": 59.11817,
+      "longitude": 28.09137
+    },
+    {
+      "id": "c497218",
+      "description": "Ростовская область",
+      "country": "RU",
+      "name": "Семикаракорск",
+      "latitude": 47.51675,
+      "longitude": 40.80577
+    },
+    {
+      "id": "c498677",
+      "description": "Саратовская область",
+      "country": "RU",
+      "name": "Саратов",
+      "latitude": 51.54056,
+      "longitude": 46.00861
+    },
+    {
+      "id": "c498698",
+      "description": "Республика Мордовия",
+      "country": "RU",
+      "name": "Саранск",
+      "latitude": 54.1838,
+      "longitude": 45.1749
+    },
+    {
+      "id": "c498817",
+      "description": "Санкт-Петербург",
+      "country": "RU",
+      "name": "Санкт-Петербург",
+      "latitude": 59.93863,
+      "longitude": 30.31413
+    },
+    {
+      "id": "c499099",
+      "description": "Самарская область",
+      "country": "RU",
+      "name": "Самара",
+      "latitude": 53.20007,
+      "longitude": 50.15
+    },
+    {
+      "id": "c499292",
+      "description": "Башкортостан",
+      "country": "RU",
+      "name": "Салават",
+      "latitude": 53.38365,
+      "longitude": 55.90773
+    },
+    {
+      "id": "c588686",
+      "description": "Ида-Вирумаа",
+      "country": "EE",
+      "name": "Силламяэ",
+      "latitude": 59.39697,
+      "longitude": 27.76331
+    },
+    {
+      "id": "c611866",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Скидель",
+      "latitude": 53.5904,
+      "longitude": 24.2478
+    },
+    {
+      "id": "c621048",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Свислочь",
+      "latitude": 53.03474,
+      "longitude": 24.09829
+    },
+    {
+      "id": "c621266",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Столбцы",
+      "latitude": 53.4785,
+      "longitude": 26.7434
+    },
+    {
+      "id": "c621838",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Славгород",
+      "latitude": 53.4429,
+      "longitude": 31.0014
+    },
+    {
+      "id": "c622333",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Селец (Быховский р-н)",
+      "latitude": 53.3879,
+      "longitude": 30.3951
+    },
+    {
+      "id": "c622428",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Солигорск",
+      "latitude": 52.7876,
+      "longitude": 27.5415
+    },
+    {
+      "id": "c692105",
+      "description": "Луганская область",
+      "country": "UA",
+      "name": "Свердловск",
+      "latitude": 48.08964,
+      "longitude": 39.65243
+    },
+    {
+      "id": "c692975",
+      "description": "Луганская область",
+      "country": "RU",
+      "name": "Стаханов",
+      "latitude": 48.56818,
+      "longitude": 38.64352
+    },
+    {
+      "id": "c693805",
+      "description": "Республика Крым",
+      "country": "UA",
+      "name": "Симферополь",
+      "latitude": 44.95719,
+      "longitude": 34.11079
+    },
+    {
+      "id": "c694423",
+      "description": "Город Севастополь",
+      "country": "UA",
+      "name": "Севастополь",
+      "latitude": 44.60795,
+      "longitude": 33.52134
+    },
+    {
+      "id": "c8076659",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Совхоз Свислочь",
+      "latitude": 53.4973,
+      "longitude": 24.0709
+    }
+  ],
+  "Т": [
+    {
+      "id": "c1488754",
+      "description": "Тюменская область",
+      "country": "RU",
+      "name": "Тюмень",
+      "latitude": 57.15222,
+      "longitude": 65.52722
+    },
+    {
+      "id": "c1489425",
+      "description": "Томская область",
+      "country": "RU",
+      "name": "Томск",
+      "latitude": 56.49771,
+      "longitude": 84.97437
+    },
+    {
+      "id": "c480060",
+      "description": "Тверская область",
+      "country": "RU",
+      "name": "Тверь",
+      "latitude": 56.85836,
+      "longitude": 35.90057
+    },
+    {
+      "id": "c480562",
+      "description": "Тульская область",
+      "country": "RU",
+      "name": "Тула",
+      "latitude": 54.19609,
+      "longitude": 37.61822
+    },
+    {
+      "id": "c480716",
+      "description": "Краснодарский край",
+      "country": "RU",
+      "name": "Туапсе",
+      "latitude": 44.1053,
+      "longitude": 39.0802
+    },
+    {
+      "id": "c481608",
+      "description": "Москва",
+      "country": "RU",
+      "name": "Троицк",
+      "latitude": 55.48498,
+      "longitude": 37.30736
+    },
+    {
+      "id": "c482283",
+      "description": "Самарская область",
+      "country": "RU",
+      "name": "Тольятти",
+      "latitude": 53.5303,
+      "longitude": 49.3461
+    },
+    {
+      "id": "c483019",
+      "description": "Ленинградская область",
+      "country": "RU",
+      "name": "Тихвин",
+      "latitude": 59.64511,
+      "longitude": 33.52937
+    },
+    {
+      "id": "c484017",
+      "description": "Ростовская область",
+      "country": "RU",
+      "name": "Тацинская",
+      "latitude": 48.19677,
+      "longitude": 41.27558
+    },
+    {
+      "id": "c484646",
+      "description": "Тамбовская область",
+      "country": "RU",
+      "name": "Тамбов",
+      "latitude": 52.73169,
+      "longitude": 41.44326
+    },
+    {
+      "id": "c588348",
+      "description": "Ляэне-Вирумаа",
+      "country": "EE",
+      "name": "Тапа",
+      "latitude": 59.26056,
+      "longitude": 25.95861
+    },
+    {
+      "id": "c588409",
+      "description": "Харьюмаа",
+      "country": "EE",
+      "name": "Таллинн",
+      "latitude": 59.43696,
+      "longitude": 24.75353
+    },
+    {
+      "id": "c611717",
+      "description": "K'alak'i T'bilisi",
+      "country": "GE",
+      "name": "Тбилиси",
+      "latitude": 41.69411,
+      "longitude": 44.83368
+    },
+    {
+      "id": "c620676",
+      "description": "Гомельская Область",
+      "country": "BY",
+      "name": "Туров",
+      "latitude": 52.0683,
+      "longitude": 27.735
+    },
+    {
+      "id": "c620692",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Турец",
+      "latitude": 53.5263,
+      "longitude": 26.3125
+    },
+    {
+      "id": "c620788",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Трокели",
+      "latitude": 54.0361,
+      "longitude": 25.4082
+    },
+    {
+      "id": "c620807",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Трабы",
+      "latitude": 54.1587,
+      "longitude": 25.9075
+    },
+    {
+      "id": "c620869",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Тимковичи",
+      "latitude": 53.0672,
+      "longitude": 26.9902
+    },
+    {
+      "id": "c620934",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Теляково",
+      "latitude": 53.5179,
+      "longitude": 27.3877
+    },
+    {
+      "id": "c620945",
+      "description": "Брестская Область",
+      "country": "BY",
+      "name": "Телеханы",
+      "latitude": 52.5175,
+      "longitude": 25.8429
+    },
+    {
+      "id": "c620980",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Талуть",
+      "latitude": 54.6892,
+      "longitude": 26.9427
+    },
+    {
+      "id": "c691374",
+      "description": "Донецкая область",
+      "country": "UA",
+      "name": "Торез",
+      "latitude": 48.03876,
+      "longitude": 38.59685
+    },
+    {
+      "id": "c756938",
+      "description": "Люблинское воеводство",
+      "country": "PL",
+      "name": "Тересполь",
+      "latitude": 52.0755,
+      "longitude": 23.61614
+    },
+    {
+      "id": "c8282617",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Тишковщина",
+      "latitude": 54.0131,
+      "longitude": 26.93
+    },
+    {
+      "id": "c864523",
+      "description": "Вильнюсский уезд",
+      "country": "LT",
+      "name": "Тракай",
+      "latitude": 54.63333,
+      "longitude": 24.93333
+    }
+  ],
+  "У": [
+    {
+      "id": "c466555",
+      "description": "Карельская республика",
+      "country": "RU",
+      "name": "Ууксу",
+      "latitude": 61.51154,
+      "longitude": 31.5874
+    },
+    {
+      "id": "c477795",
+      "description": "Вологодская область",
+      "country": "RU",
+      "name": "Устюжна",
+      "latitude": 58.8394,
+      "longitude": 36.4321
+    },
+    {
+      "id": "c478044",
+      "description": "Краснодарский край",
+      "country": "RU",
+      "name": "Усть-Лабинск",
+      "latitude": 45.21077,
+      "longitude": 39.68914
+    },
+    {
+      "id": "c478544",
+      "description": "Волгоградская область",
+      "country": "RU",
+      "name": "Урюпинск",
+      "latitude": 50.8047,
+      "longitude": 42.0138
+    },
+    {
+      "id": "c478565",
+      "description": "Республика Татарстан",
+      "country": "RU",
+      "name": "Уруссу",
+      "latitude": 54.59812,
+      "longitude": 53.46313
+    },
+    {
+      "id": "c479028",
+      "description": "Брянская область",
+      "country": "RU",
+      "name": "Унеча",
+      "latitude": 52.84591,
+      "longitude": 32.67394
+    },
+    {
+      "id": "c479123",
+      "description": "Ульяновская область",
+      "country": "RU",
+      "name": "Ульяновск",
+      "latitude": 54.32824,
+      "longitude": 48.38657
+    },
+    {
+      "id": "c479532",
+      "description": "Ярославская область",
+      "country": "RU",
+      "name": "Углич",
+      "latitude": 57.5275,
+      "longitude": 38.33167
+    },
+    {
+      "id": "c479561",
+      "description": "Башкортостан",
+      "country": "RU",
+      "name": "Уфа",
+      "latitude": 54.74306,
+      "longitude": 55.96779
+    },
+    {
+      "id": "c620464",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Узнацк",
+      "latitude": 54.4709,
+      "longitude": 28.9849
+    },
+    {
+      "id": "c620469",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Узла",
+      "latitude": 54.7198,
+      "longitude": 26.9393
+    },
+    {
+      "id": "c620483",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Узда",
+      "latitude": 53.4627,
+      "longitude": 27.2137
+    },
+    {
+      "id": "c620540",
+      "description": "Витебская Область",
+      "country": "BY",
+      "name": "Ушачи",
+      "latitude": 55.179,
+      "longitude": 28.6158
+    },
+    {
+      "id": "c620579",
+      "description": "Витебская Область",
+      "country": "BY",
+      "name": "Улла",
+      "latitude": 55.2252,
+      "longitude": 29.252
+    },
+    {
+      "id": "c620599",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Угринь",
+      "latitude": 53.2412,
+      "longitude": 24.9726
+    },
+    {
+      "id": "c620603",
+      "description": "Брестская Область",
+      "country": "BY",
+      "name": "Уголец",
+      "latitude": 52.0219,
+      "longitude": 27.0577
+    },
+    {
+      "id": "c6846206",
+      "description": "Нижегородская область",
+      "country": "RU",
+      "name": "Ужовка",
+      "latitude": 54.79449,
+      "longitude": 44.85618
+    },
+    {
+      "id": "c8071966",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Урожайная",
+      "latitude": 53.6783,
+      "longitude": 26.1075
+    }
+  ],
+  "Ф": [
+    {
+      "id": "c521882",
+      "description": "Псковская область",
+      "country": "RU",
+      "name": "Феофилова Пустынь",
+      "latitude": 58.26639,
+      "longitude": 29.45861
+    },
+    {
+      "id": "c562389",
+      "description": "Волгоградская область",
+      "country": "RU",
+      "name": "Фролово",
+      "latitude": 49.77133,
+      "longitude": 43.66222
+    },
+    {
+      "id": "c627297",
+      "description": "Брестская Область",
+      "country": "BY",
+      "name": "Федьковичи",
+      "latitude": 52.1531,
+      "longitude": 24.0502
+    },
+    {
+      "id": "c628600",
+      "description": "Брестская Область",
+      "country": "BY",
+      "name": "Федоры",
+      "latitude": 51.94856,
+      "longitude": 26.39887
+    },
+    {
+      "id": "c628611",
+      "description": "Гомельская Область",
+      "country": "BY",
+      "name": "Фастовичи",
+      "latitude": 52.5114,
+      "longitude": 28.4861
+    },
+    {
+      "id": "c628612",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Фащевка",
+      "latitude": 54.1468,
+      "longitude": 30.4953
+    },
+    {
+      "id": "c709161",
+      "description": "Республика Крым",
+      "country": "UA",
+      "name": "Феодосия",
+      "latitude": 45.03199,
+      "longitude": 35.38153
+    }
+  ],
+  "Х": [
+    {
+      "id": "c12121029",
+      "description": "Карельская республика",
+      "country": "RU",
+      "name": "Хелюля",
+      "latitude": 61.74477,
+      "longitude": 30.66739
+    },
+    {
+      "id": "c1503645",
+      "description": "Красноярский край",
+      "country": "RU",
+      "name": "Хлоптуново",
+      "latitude": 56.46972,
+      "longitude": 93.64917
+    },
+    {
+      "id": "c1503772",
+      "description": "Ханты-Мансийский автономный округ",
+      "country": "RU",
+      "name": "Ханты-Мансийск",
+      "latitude": 61.00417,
+      "longitude": 69.00194
+    },
+    {
+      "id": "c379252",
+      "description": "Khartoum State",
+      "country": "SD",
+      "name": "Хартум",
+      "latitude": 15.55177,
+      "longitude": 32.53241
+    },
+    {
+      "id": "c549278",
+      "description": "Псковская область",
+      "country": "RU",
+      "name": "Хредино",
+      "latitude": 58.10944,
+      "longitude": 29.41528
+    },
+    {
+      "id": "c549797",
+      "description": "Новгородская Область",
+      "country": "RU",
+      "name": "Холм",
+      "latitude": 57.14543,
+      "longitude": 31.1778
+    },
+    {
+      "id": "c550292",
+      "description": "Псковская область",
+      "country": "RU",
+      "name": "Хилово",
+      "latitude": 57.77096,
+      "longitude": 29.38218
+    },
+    {
+      "id": "c550366",
+      "description": "Карельская республика",
+      "country": "RU",
+      "name": "Хелюля (село)",
+      "latitude": 61.749,
+      "longitude": 30.66473
+    },
+    {
+      "id": "c550693",
+      "description": "Карельская республика",
+      "country": "RU",
+      "name": "Хапалампи",
+      "latitude": 61.6489,
+      "longitude": 30.59229
+    },
+    {
+      "id": "c550858",
+      "description": "Тверская область",
+      "country": "RU",
+      "name": "Хабоцкое",
+      "latitude": 58.14156,
+      "longitude": 37.02899
+    },
+    {
+      "id": "c627381",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Хотимск",
+      "latitude": 53.4086,
+      "longitude": 32.578
+    },
+    {
+      "id": "c627394",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Хорошее",
+      "latitude": 54.5647,
+      "longitude": 27.8007
+    },
+    {
+      "id": "c627401",
+      "description": "Брестская Область",
+      "country": "BY",
+      "name": "Хоромск",
+      "latitude": 52.0242,
+      "longitude": 27.11
+    },
+    {
+      "id": "c627424",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Холопеничи",
+      "latitude": 54.51746,
+      "longitude": 28.95645
+    },
+    {
+      "id": "c627455",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Ходоровцы",
+      "latitude": 53.6366,
+      "longitude": 25.0648
+    },
+    {
+      "id": "c627460",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Ходилони",
+      "latitude": 53.8729,
+      "longitude": 24.7204
+    },
+    {
+      "id": "c627526",
+      "description": "Брестская Область",
+      "country": "BY",
+      "name": "Хабы",
+      "latitude": 52.1331,
+      "longitude": 23.91
+    },
+    {
+      "id": "c706466",
+      "description": "Донецкая область",
+      "country": "UA",
+      "name": "Харцызск",
+      "latitude": 48.04243,
+      "longitude": 38.14728
+    },
+    {
+      "id": "c8076658",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Хартица",
+      "latitude": 53.5053,
+      "longitude": 24.2567
+    },
+    {
+      "id": "c8246958",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Ходосы",
+      "latitude": 54.5121,
+      "longitude": 27.3541
+    }
+  ],
+  "Ц": [
+    {
+      "id": "c480851",
+      "description": "Республика Чувашия",
+      "country": "RU",
+      "name": "Цивильск",
+      "latitude": 55.86974,
+      "longitude": 47.47874
+    },
+    {
+      "id": "c620737",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Церковище",
+      "latitude": 54.0668,
+      "longitude": 30.356
+    },
+    {
+      "id": "c812630",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Церковище",
+      "latitude": 54.185,
+      "longitude": 30.4915
+    }
+  ],
+  "Ч": [
+    {
+      "id": "c1508291",
+      "description": "Челябинская область",
+      "country": "RU",
+      "name": "Челябинск",
+      "latitude": 55.15402,
+      "longitude": 61.42915
+    },
+    {
+      "id": "c3100946",
+      "description": "Силезское воеводство",
+      "country": "PL",
+      "name": "Ченстохова",
+      "latitude": 50.79646,
+      "longitude": 19.12409
+    },
+    {
+      "id": "c567443",
+      "description": "Вологодская область",
+      "country": "RU",
+      "name": "Чушевицы",
+      "latitude": 60.50814,
+      "longitude": 41.75336
+    },
+    {
+      "id": "c567990",
+      "description": "Республика Татарстан",
+      "country": "RU",
+      "name": "Чистополь",
+      "latitude": 55.36311,
+      "longitude": 50.64244
+    },
+    {
+      "id": "c568527",
+      "description": "Волгоградская область",
+      "country": "RU",
+      "name": "Чернышковский",
+      "latitude": 48.42188,
+      "longitude": 42.23083
+    },
+    {
+      "id": "c569155",
+      "description": "Волгоградская область",
+      "country": "RU",
+      "name": "Черкесовский",
+      "latitude": 50.6849,
+      "longitude": 42.5635
+    },
+    {
+      "id": "c569223",
+      "description": "Вологодская область",
+      "country": "RU",
+      "name": "Череповец",
+      "latitude": 59.13333,
+      "longitude": 37.9
+    },
+    {
+      "id": "c569556",
+      "description": "Вологодская область",
+      "country": "RU",
+      "name": "Чекшино",
+      "latitude": 59.65567,
+      "longitude": 40.5527
+    },
+    {
+      "id": "c569696",
+      "description": "Республика Чувашия",
+      "country": "RU",
+      "name": "Чебоксары",
+      "latitude": 56.13222,
+      "longitude": 47.25194
+    },
+    {
+      "id": "c570086",
+      "description": "Вологодская область",
+      "country": "RU",
+      "name": "Чагода",
+      "latitude": 59.164,
+      "longitude": 35.3285
+    },
+    {
+      "id": "c629205",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Чурилово",
+      "latitude": 53.5099,
+      "longitude": 27.2836
+    },
+    {
+      "id": "c629290",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Черняты",
+      "latitude": 55.0066,
+      "longitude": 26.8834
+    },
+    {
+      "id": "c629318",
+      "description": "Витебская Область",
+      "country": "BY",
+      "name": "Чёрница",
+      "latitude": 54.7763,
+      "longitude": 28.5553
+    },
+    {
+      "id": "c629347",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Чериков",
+      "latitude": 53.5689,
+      "longitude": 31.3831
+    },
+    {
+      "id": "c629363",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Черемшицы",
+      "latitude": 54.78,
+      "longitude": 26.8372
+    },
+    {
+      "id": "c629379",
+      "description": "Гомельская Область",
+      "country": "BY",
+      "name": "Челющевичи",
+      "latitude": 52.3568,
+      "longitude": 28.7523
+    },
+    {
+      "id": "c629388",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Чечевичи",
+      "latitude": 53.5173,
+      "longitude": 29.843
+    },
+    {
+      "id": "c629390",
+      "description": "Гомельская Область",
+      "country": "BY",
+      "name": "Чечерск",
+      "latitude": 52.9164,
+      "longitude": 30.9179
+    },
+    {
+      "id": "c629395",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Чаусы",
+      "latitude": 53.8098,
+      "longitude": 30.9717
+    },
+    {
+      "id": "c710735",
+      "description": "Черниговская область",
+      "country": "UA",
+      "name": "Чернигов",
+      "latitude": 51.50551,
+      "longitude": 31.28487
+    },
+    {
+      "id": "c8174718",
+      "description": "Брестская Область",
+      "country": "BY",
+      "name": "Черебасово",
+      "latitude": 52.2477,
+      "longitude": 27.1886
+    },
+    {
+      "id": "c8174820",
+      "description": "Гомельская Область",
+      "country": "BY",
+      "name": "Черничи",
+      "latitude": 52.0629,
+      "longitude": 27.8218
+    },
+    {
+      "id": "c8246889",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Чижевичи",
+      "latitude": 54.508,
+      "longitude": 27.0444
+    },
+    {
+      "id": "c8282634",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Чеховщина",
+      "latitude": 54.0496,
+      "longitude": 26.6522
+    },
+    {
+      "id": "c8282659",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Чабаи",
+      "latitude": 54.1625,
+      "longitude": 26.622
+    }
+  ],
+  "Ш": [
+    {
+      "id": "c494366",
+      "description": "Новгородская Область",
+      "country": "RU",
+      "name": "Шимск",
+      "latitude": 58.21201,
+      "longitude": 30.71269
+    },
+    {
+      "id": "c494846",
+      "description": "Краснодарский край",
+      "country": "RU",
+      "name": "Шепси",
+      "latitude": 44.0355,
+      "longitude": 39.1474
+    },
+    {
+      "id": "c495062",
+      "description": "Вологодская область",
+      "country": "RU",
+      "name": "Шексна",
+      "latitude": 59.20998,
+      "longitude": 38.51066
+    },
+    {
+      "id": "c495670",
+      "description": "Оренбургская область",
+      "country": "RU",
+      "name": "Шарлык",
+      "latitude": 52.91667,
+      "longitude": 54.75
+    },
+    {
+      "id": "c495887",
+      "description": "Ленинградская область",
+      "country": "RU",
+      "name": "Шамокша",
+      "latitude": 60.65975,
+      "longitude": 33.35283
+    },
+    {
+      "id": "c496015",
+      "description": "Ростовская область",
+      "country": "RU",
+      "name": "Шахты",
+      "latitude": 47.70911,
+      "longitude": 40.21443
+    },
+    {
+      "id": "c517073",
+      "description": "Республика Татарстан",
+      "country": "RU",
+      "name": "Шалты",
+      "latitude": 54.09786,
+      "longitude": 53.45298
+    },
+    {
+      "id": "c595016",
+      "description": "Вильнюсский уезд",
+      "country": "LT",
+      "name": "Шальчининкай",
+      "latitude": 54.30864,
+      "longitude": 25.38677
+    },
+    {
+      "id": "c621973",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Швакшты",
+      "latitude": 54.9582,
+      "longitude": 26.6456
+    },
+    {
+      "id": "c621981",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Шупени",
+      "latitude": 54.195,
+      "longitude": 29.8308
+    },
+    {
+      "id": "c621986",
+      "description": "Витебская Область",
+      "country": "BY",
+      "name": "Шумилино",
+      "latitude": 55.2985,
+      "longitude": 29.6121
+    },
+    {
+      "id": "c622034",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Шклов",
+      "latitude": 54.2131,
+      "longitude": 30.2877
+    },
+    {
+      "id": "c622044",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Шищицы",
+      "latitude": 53.2186,
+      "longitude": 27.5465
+    },
+    {
+      "id": "c622061",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Шиловичи",
+      "latitude": 53.16761,
+      "longitude": 24.24317
+    },
+    {
+      "id": "c622179",
+      "description": "Витебская Область",
+      "country": "BY",
+      "name": "Шарковщина",
+      "latitude": 55.3689,
+      "longitude": 27.4686
+    },
+    {
+      "id": "c694382",
+      "description": "Донецкая область",
+      "country": "UA",
+      "name": "Шахтерск",
+      "latitude": 48.05657,
+      "longitude": 38.43826
+    },
+    {
+      "id": "c8028981",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Шнипово",
+      "latitude": 53.22913,
+      "longitude": 24.2778
+    },
+    {
+      "id": "c8282599",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Шараи",
+      "latitude": 54.0551,
+      "longitude": 26.7753
+    },
+    {
+      "id": "c828686",
+      "description": "Ленинградская область",
+      "country": "RU",
+      "name": "Шеменичи",
+      "latitude": 60.87902,
+      "longitude": 34.42796
+    }
+  ],
+  "Щ": [
+    {
+      "id": "c3083829",
+      "description": "Западнопоморское воеводство",
+      "country": "PL",
+      "name": "Щецин",
+      "latitude": 53.42894,
+      "longitude": 14.55302
+    },
+    {
+      "id": "c495385",
+      "description": "Карельская республика",
+      "country": "RU",
+      "name": "Щеккила",
+      "latitude": 61.60183,
+      "longitude": 32.98514
+    },
+    {
+      "id": "c622113",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Щучин",
+      "latitude": 53.6014,
+      "longitude": 24.7465
+    },
+    {
+      "id": "c622117",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Щорсы",
+      "latitude": 53.6344,
+      "longitude": 26.1855
+    },
+    {
+      "id": "c622125",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Щитковичи",
+      "latitude": 53.2186,
+      "longitude": 27.9874
+    },
+    {
+      "id": "c622129",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Щежерь Первый",
+      "latitude": 53.8346,
+      "longitude": 30.536
+    },
+    {
+      "id": "c622139",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Щепичи",
+      "latitude": 53.0766,
+      "longitude": 26.5743
+    }
+  ],
+  "Ъ": [],
+  "Ы": [],
+  "Ь": [],
+  "Э": [
+    {
+      "id": "c563514",
+      "description": "Республика Калмыкия",
+      "country": "RU",
+      "name": "Элиста",
+      "latitude": 46.30778,
+      "longitude": 44.25583
+    },
+    {
+      "id": "c8019924",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Энергетиков",
+      "latitude": 53.5871,
+      "longitude": 27.0535
+    }
+  ],
+  "Ю": [
+    {
+      "id": "c12573999",
+      "description": "Вологодская область",
+      "country": "RU",
+      "name": "Юбилейный",
+      "latitude": 59.670379,
+      "longitude": 42.054432
+    },
+    {
+      "id": "c459201",
+      "description": "Jūrmala",
+      "country": "LV",
+      "name": "Юрмала",
+      "latitude": 56.968,
+      "longitude": 23.77038
+    },
+    {
+      "id": "c466442",
+      "description": "Карельская республика",
+      "country": "RU",
+      "name": "Юргелица",
+      "latitude": 60.94484,
+      "longitude": 33.03379
+    },
+    {
+      "id": "c619538",
+      "description": "Гродненская Область",
+      "country": "BY",
+      "name": "Юратишки",
+      "latitude": 54.0315,
+      "longitude": 25.9325
+    },
+    {
+      "id": "c619548",
+      "description": "Витебская Область",
+      "country": "BY",
+      "name": "Юховичи",
+      "latitude": 56.01188,
+      "longitude": 28.64672
+    },
+    {
+      "id": "c8222041",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Юшковка",
+      "latitude": 54.6678,
+      "longitude": 27.3855
+    },
+    {
+      "id": "c8247086",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Юльяново",
+      "latitude": 54.4696,
+      "longitude": 27.8396
+    }
+  ],
+  "Я": [
+    {
+      "id": "c468484",
+      "description": "Башкортостан",
+      "country": "RU",
+      "name": "Языково",
+      "latitude": 54.7,
+      "longitude": 55.01667
+    },
+    {
+      "id": "c468548",
+      "description": "Новгородская Область",
+      "country": "RU",
+      "name": "Яжелбицы",
+      "latitude": 58.0369,
+      "longitude": 32.95768
+    },
+    {
+      "id": "c468747",
+      "description": "Республика Калмыкия",
+      "country": "RU",
+      "name": "Яшкуль",
+      "latitude": 46.1711,
+      "longitude": 45.3435
+    },
+    {
+      "id": "c468902",
+      "description": "Ярославская область",
+      "country": "RU",
+      "name": "Ярославль",
+      "latitude": 57.62987,
+      "longitude": 39.87368
+    },
+    {
+      "id": "c469330",
+      "description": "Оренбургская область",
+      "country": "RU",
+      "name": "Яман",
+      "latitude": 51.6173,
+      "longitude": 53.30639
+    },
+    {
+      "id": "c619670",
+      "description": "Могилевская область",
+      "country": "BY",
+      "name": "Ясный Лес",
+      "latitude": 53.1803,
+      "longitude": 29.3453
+    },
+    {
+      "id": "c619700",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Янушковичи",
+      "latitude": 54.2691,
+      "longitude": 27.6108
+    },
+    {
+      "id": "c619753",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Яловка",
+      "latitude": 53.5388,
+      "longitude": 27.4256
+    },
+    {
+      "id": "c688533",
+      "description": "Республика Крым",
+      "country": "UA",
+      "name": "Ялта",
+      "latitude": 44.50218,
+      "longitude": 34.16624
+    },
+    {
+      "id": "c8047128",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Яжевичи",
+      "latitude": 53.0661,
+      "longitude": 26.5563
+    },
+    {
+      "id": "c8221968",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Язни",
+      "latitude": 54.6861,
+      "longitude": 27.3513
+    },
+    {
+      "id": "c8282636",
+      "description": "Минская Область",
+      "country": "BY",
+      "name": "Яшковичи",
+      "latitude": 54.0404,
+      "longitude": 26.6248
+    }
+  ]
+}
