@@ -27,3 +27,6 @@ replay_pid*
 .kotlin/
 /.gigaide/
 /.idea/
+
+# Build output
+**/target/

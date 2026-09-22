@@ -17,4 +17,10 @@ public class Constants {
     public static final String ATLAS_APPLICATION_VERSION = "2.63.2";
     public static final String ATLAS_SAAS_PARTNER_ID = "atlas";
 
+    public static final String BZD_BASE_URL = "https://pass.rw.by";
+    public static final String BZD_LOCALE = "ru-RU,ru;q=0.9";
+    public static final String BZD_USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) "
+            + "AppleWebKit/537.36 (KHTML, like Gecko) "
+            + "Chrome/140.0.0.0 Safari/537.36";
+
 }
