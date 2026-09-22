@@ -23,4 +23,8 @@ public class Constants {
             + "AppleWebKit/537.36 (KHTML, like Gecko) "
             + "Chrome/140.0.0.0 Safari/537.36";
 
+    public static final String TICKETBUS_BASE_URL = "https://ticketbus.by";
+    public static final String TICKETBUS_DATE = "dd.MM.yyyy";
+    public static final String TICKETBUS_USER_AGENT = BZD_USER_AGENT;
+
 }
