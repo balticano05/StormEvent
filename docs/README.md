@@ -53,6 +53,9 @@
 | [`19_unhappy_sources_atlas_bzd.md`](19_unhappy_sources_atlas_bzd.md) | Ошибки 71–120: специфика AtlasBus и BZD |
 | [`20_unhappy_sources_bus_events_hotels.md`](20_unhappy_sources_bus_events_hotels.md) | Ошибки 121–200: специфика TicketBus, TicketPro, BelHotel |
 | [`21_unhappy_legal_geo.md`](21_unhappy_legal_geo.md) | Ошибки 201–235: юридические/этические и специфика РБ/РФ |
+| [`22_spec_errors.md`](22_spec_errors.md) | Спека обработки ошибок внешних источников: политики, circuit breaker, retry, warmup, SSE, метрики |
+| [`23_impl_blueprint.md`](23_impl_blueprint.md) | Блюпринт реализации (нижний уровень): API, гейтвеи, планировщики, обработчики, исключения, параллельность, целостность |
+| [`24_implementation_plan.md`](24_implementation_plan.md) | Детальный план реализации (1040 шагов): БД, API, гейтвеи, circuit, параллельность, LLM, тесты |
 
 ## Сводка
 
