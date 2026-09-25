@@ -47,15 +47,16 @@
 | [`13_happy_queue.md`](13_happy_queue.md) | Хэппи пути 69–80: очередь при нагрузке (FIFO, backpressure). Правки решений владельца — в `25_contradictions.md` |
 | [`14_unhappy_refine.md`](14_unhappy_refine.md) | Анхэппи пути 63–75: refine |
 | [`15_unhappy_queue.md`](15_unhappy_queue.md) | Анхэппи пути 76–88: очередь и нагрузка |
-| [`16_unhappy_circuit_switch.md`](16_unhappy_circuit_switch.md) | Анхэппи пути 89–115: ручное отключение/включение источников (**circuit breaker отменён** — ADR-020) |
+| [`16_unhappy_circuit_switch.md`](16_unhappy_circuit_switch.md) | Анхэппи пути 89–115: ручное отключение/включение источников (**circuit breaker отменён** — ADR-VL-04) |
 | [`17_unhappy_http_network.md`](17_unhappy_http_network.md) | Ошибки 1–36: общие HTTP и сетевые |
 | [`18_unhappy_content.md`](18_unhappy_content.md) | Ошибки 37–70: проблемы с контентом |
 | [`19_unhappy_sources_atlas_bzd.md`](19_unhappy_sources_atlas_bzd.md) | Ошибки 71–120: специфика AtlasBus и BZD |
 | [`20_unhappy_sources_bus_events_hotels.md`](20_unhappy_sources_bus_events_hotels.md) | Ошибки 121–200: специфика TicketBus, TicketPro, BelHotel |
 | [`21_unhappy_legal_geo.md`](21_unhappy_legal_geo.md) | Ошибки 201–235: юридические/этические и специфика РБ/РФ |
-| [`22_spec_errors.md`](22_spec_errors.md) | Спека обработки ошибок внешних источников: политики, retry, warmup, SSE, метрики (**circuit breaker отменён** — ADR-020) |
+| [`22_spec_errors.md`](22_spec_errors.md) | Спека обработки ошибок внешних источников: политики, retry, warmup, SSE, метрики (**circuit breaker отменён** — ADR-VL-04) |
 | [`23_impl_blueprint.md`](23_impl_blueprint.md) | Блюпринт реализации (нижний уровень): API, гейтвеи, планировщики, обработчики, исключения, параллельность, целостность. Актуальный контракт — `POST /api/v1/agent/chat` → `text/plain` |
 | [`24_implementation_plan.md`](24_implementation_plan.md) | Детальный план реализации (~1030 шагов): БД, API, гейтвеи, параллельность, LLM, тесты. Правки решений владельца — в `25_contradictions.md`, помечены `[ВЛ]`/`[ОТМЕНЕНО]` |
+| [`decisions.md`](decisions.md) | **Журнал АДР** (канон): базовые решения `ADR-001…016` + решения владельца `ADR-VL-01…014` |
 | [`25_contradictions.md`](25_contradictions.md) | Противоречия между доками 01–24 и кодом (шаг 1 ФАЗЫ 0): 27 пунктов + **решения владельца** (текстовый контракт, сессия-чат 15 мин, агентный цикл с OpenRouter, FIFO-очередь, без circuit breaker) |
 
 ## Сводка

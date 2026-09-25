@@ -342,9 +342,11 @@
 
 ## H. Что делать дальше
 
-1. **Переписать** план/блюпринт под решения раундов 1–2: АДР-010 (отмена), АДР-008 (несколько клиентов), §10–§13 блюпринта, фаза 5 плана (ParallelExecutor), фаза 11 (Prometheus отменяется), **фазы circuit breaker — пропустить**, **контракт API — текстовый `chat`**.
-2. Оформить **АДР в `docs/decisions.md`** (шаг 4 плана): ADR-010 (таймауты/await-all), ADR-008 (клиенты), ADR-016 (Europe/Minsk), ADR-005/030 (Postgres), ADR-015 (id источников), ADR-019 (очередь: **FIFO без приоритетов**), ADR-020 (admin auth), ADR-021 (robots/anti-bot), ADR-022 (сессия-чат: `session_message`, TTL 15 мин), ADR-023 (**circuit breaker отложен**), ADR-024 (**текстовый контракт `POST /api/v1/agent/chat`**).
-3. Все вопросы раундов 1–2 закрыты; можно переписывать `24_implementation_plan.md` под принятые решения (шаг 2).
-4. Отметить `[ПРОВ]`-шаги 2, 3, 29 как частично выполненные (Ф-3…Ф-6).
-5. Убрать из `13_happy_queue.md` и `23_impl_blueprint.md` приоритеты/aging (АНП-83) — по решению владельца очередь FIFO.
-6. В `24_implementation_plan.md` удалить/пометить как отменённые шаги фаз circuit breaker и `circuit_state` (миграция), поправить session TTL на 15 мин, добавить `session_message`, заменить `ResponseDto` на текстовый ответ.
+Все пункты ниже **выполнены**; канон — [`decisions.md`](decisions.md).
+
+1. [✓] **Переписаны** план и блюпринт под решения владельца: `24_implementation_plan.md` (блок 40.1, отменённые шаги помечены `[ОТМЕНЕНО]`), `23_impl_blueprint.md` (контракты и параллельность), `13`, `16`, `22`.
+2. [✓] **Журнал АДР создан** — [`decisions.md`](decisions.md): базовые `ADR-001…ADR-016` + решения владельца `ADR-VL-01…ADR-VL-14` (текстовый контракт, сессия-чат 15 мин, агентный цикл, circuit breaker отложен, FIFO-очередь, ошибки источников, наблюдаемость без Prometheus, `X-Api-Key`, anti-bot, Jackson/`@ResponseStatus`, warmup в гейтвеях).
+3. [✓] Все вопросы раундов 1–2 закрыты; `[ПРОВ]`-шаги 2, 3, 19, 21, 24, 29 отмечены выполненными (Ф-3…Ф-6).
+4. [✓] Приоритеты/aging (АНП-83) убраны из `13_happy_queue.md`, `16`, `23`; очередь FIFO (ADR-006, ADR-VL-05).
+5. [✓] В `24_implementation_plan.md` фаза circuit breaker и миграция `circuit_state` помечены отменёнными, session TTL = 15 мин, добавлена `session_message`, `ResponseDto` заменён текстовым ответом.
+6. [ ] Остаётся: получить ключ OpenRouter (`OPENROUTER_API_KEY`, `OPENROUTER_MODEL`) — до этого работает fallback.

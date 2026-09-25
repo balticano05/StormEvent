@@ -3,7 +3,7 @@
 Назначение документа — быть **исходником для построения детального плана (1000+ шагов)**.
 
 > **Обновлено по решениям владельца** ([`25_contradictions.md`](25_contradictions.md), разделы 0, 0.1, 0.2). `~~отменено~~` — правила, **не реализуемые в MVP**; `[ВЛ]` — действующие решения.
-> Ключевые отмены: circuit breaker (ADR-020), общий `deadlineMs`/отмена запросов (ADR-025, ПРОТ-01), JSON-контракт `SearchResponse` и `openapi.yml` (ADR-017), эндпоинты `search`/`refine` (ADR-017), приоритеты и aging очереди (ADR-021), Prometheus (ADR-022), Redis-сессии → Postgres `session_message` с TTL 15 мин (ADR-018), `forceSource` (ADR-019), обход anti-bot (ADR-028).
+> Ключевые отмены: circuit breaker (ADR-VL-04), общий `deadlineMs`/отмена запросов (ADR-VL-09, ПРОТ-01), JSON-контракт `SearchResponse` и `openapi.yml` (ADR-VL-01), эндпоинты `search`/`refine` (ADR-VL-01), приоритеты и aging очереди (ADR-VL-05), Prometheus (ADR-VL-06), Redis-сессии → Postgres `session_message` с TTL 15 мин (ADR-VL-02), `forceSource` (ADR-VL-03), обход anti-bot (ADR-VL-12).
 Здесь зафиксированы контракты нижнего уровня: какие пакеты/классы/интерфейсы строить, какие REST-эндпоинты и JSON-структуры, как устроены гейтвеи, планировщики, обработчики, система исключений и перехват, сообщения ошибок, контракт параллельных запросов и целостность данных.
 
 ## 1. Рамки и допущения
@@ -22,7 +22,7 @@
 
 ### Чего нет — строим
 
-LLM-агент (**агентный цикл с OpenRouter**: выбор инструментов LLM → параллельный вызов → ответ; `Refiner`/`Search*Tool` как таковые не делаем), унифицированная модель оффера, гейтвеи-адаптеры, ~~circuit breaker~~ (ADR-020 — отменён), кэш, очередь, сессии, планировщики, `RestControllerAdvice`-перехват, метрики/алерты, web-слой, request-id, health.
+LLM-агент (**агентный цикл с OpenRouter**: выбор инструментов LLM → параллельный вызов → ответ; `Refiner`/`Search*Tool` как таковые не делаем), унифицированная модель оффера, гейтвеи-адаптеры, ~~circuit breaker~~ (ADR-VL-04 — отменён), кэш, очередь, сессии, планировщики, `RestControllerAdvice`-перехват, метрики/алерты, web-слой, request-id, health.
 
 ### Стек (зафиксирован в `pom.xml`)
 
@@ -31,11 +31,11 @@ Java 21 (виртуальные потоки), Spring Boot 4.1.1 (`starter-web`,
 ## 2. Контракты высокого уровня
 
 1. **Изоляция**: источник никогда не пробрасывает исключение наружу из инструмента — всегда `PrincipalResult` (успех/ошибка/partial/timeout).
-2. **Параллельность fan-out/fan-in**: N источников выполняются параллельно, сборка дожидается **всех** (каждый ограничен своим per-source таймаутом) — общего `deadline` и отмены нет (ADR-025, ПРОТ-01/02).
-3. **Целостность**: после сборки результаты immutable; дедупликация по глобальному `offerId`. ~~сессия атомарна (ветка refine мержится)~~ — **[ОТМЕНЕНО]** (ADR-019): сессия = история реплик в `session_message`.
+2. **Параллельность fan-out/fan-in**: N источников выполняются параллельно, сборка дожидается **всех** (каждый ограничен своим per-source таймаутом) — общего `deadline` и отмены нет (ADR-VL-09, ПРОТ-01/02).
+3. **Целостность**: после сборки результаты immutable; дедупликация по глобальному `offerId`. ~~сессия атомарна (ветка refine мержится)~~ — **[ОТМЕНЕНО]** (ADR-VL-03): сессия = история реплик в `session_message`.
 4. **Перехват**: все исключения проходят через единый `GlobalExceptionHandler`; `ErrorCode` однозначно маппится в (HTTP-статус, пользовательское сообщение, метрика).
 5. **request-id** пробивается от HTTP-запроса через MDC в логи каждого источника.
-6. **Приоритет флагов**: ~~`circuit > enabled > queue`~~ → **[ОТМЕНЕНО]**: circuit нет; порядок `draining` → `enabled` → `queue` (ADR-020/021).
+6. **Приоритет флагов**: ~~`circuit > enabled > queue`~~ → **[ОТМЕНЕНО]**: circuit нет; порядок `draining` → `enabled` → `queue` (ADR-VL-04/021).
 
 ## 3. Целевая структура пакетов
 
@@ -78,23 +78,23 @@ com.workspace.storm.event
 │   └── Summarizer.java
 ├── llm/
 │   ├── LlmGateway.java, LlmRequest, LlmResponse, LlmProperties   (OpenRouter, function calling)
-│   ├── AgentLoop.java, ToolSpec, ToolCall                              (ADR-019)
+│   ├── AgentLoop.java, ToolSpec, ToolCall                              (ADR-VL-03)
 │   └── RuleBasedFallback.java                                        (работает без ключа)
-├── ~~circuit/~~   [ОТМЕНЕНО] CircuitBreaker/State/Registry/Policy (ADR-020)
+├── ~~circuit/~~   [ОТМЕНЕНО] CircuitBreaker/State/Registry/Policy (ADR-VL-04)
 ├── cache/
 │   ├── CacheManager.java, CachedResult<T>
 ├── session/
-│   ├── SessionStore.java, Session, SessionProperties, SessionMessageRepository (ADR-018)
+│   ├── SessionStore.java, Session, SessionProperties, SessionMessageRepository (ADR-VL-02)
 ├── queue/
 │   ├── RequestQueue.java, RequestTask, QueueProperties, BackpressurePolicy
 ├── scheduler/
 │   ├── WarmupScheduler.java, CacheRefreshScheduler.java, SessionHousekeeper.java
-│   ├── ~~CircuitScheduler.java~~   [ОТМЕНЕНО] (ADR-020)
+│   ├── ~~CircuitScheduler.java~~   [ОТМЕНЕНО] (ADR-VL-04)
 ├── exception/
 │   ├── StormException.java, ClientException, ServiceException, ParseException, ToolException, LlmException, ErrorCode.java
 ├── web/
 │   ├── AgentController.java (POST /api/v1/agent/chat → text/plain), SourcesAdminController.java, HealthController.java
-│   ├── DiagnosticsController.java  (за X-Api-Key, ADR-026)
+│   ├── DiagnosticsController.java  (за X-Api-Key, ADR-VL-10)
 ├── handler/
 │   ├── GlobalExceptionHandler.java, RequestIdFilter.java, SourceFallbackHandler.java
 └── metrics/
@@ -107,25 +107,25 @@ com.workspace.storm.event
 
 | Метод и путь | Тело запроса | Ответ | Назначение |
 |---|---|---|---|
-| `POST /api/v1/agent/chat` | `{sessionId?, text}` | **`text/plain`** (строка) | **Единственный** эндпоинт MVP: реплика → агентный цикл → текст (ADR-017/018/019) |
-| ~~`POST /api/v1/agent/refine`~~ | ~~`RefineRequest`~~ | ~~`RefineResponse`~~ | **[ОТМЕНЕНО]** ADR-017: уточнения — обычной репликой в чат |
-| ~~`GET /api/v1/agent/sessions/{sessionId}`~~ | — | ~~`SearchResponse`~~ | **[ОТМЕНЕНО]** ADR-017 |
-| `GET /api/v1/sources` | — | `[SourceStatus]` | Состояние источников (`enabled`/`draining`) — за `X-Api-Key` (ADR-026) |
-| `POST /api/v1/sources/{name}/enable` | — | `SourceStatus` | Ручное включение — за `X-Api-Key` (ADR-026) |
-| `POST /api/v1/sources/{name}/disable` | — | `SourceStatus` | Ручное выключение (drain) — за `X-Api-Key` (ADR-026) |
+| `POST /api/v1/agent/chat` | `{sessionId?, text}` | **`text/plain`** (строка) | **Единственный** эндпоинт MVP: реплика → агентный цикл → текст (ADR-VL-01/018/019) |
+| ~~`POST /api/v1/agent/refine`~~ | ~~`RefineRequest`~~ | ~~`RefineResponse`~~ | **[ОТМЕНЕНО]** ADR-VL-01: уточнения — обычной репликой в чат |
+| ~~`GET /api/v1/agent/sessions/{sessionId}`~~ | — | ~~`SearchResponse`~~ | **[ОТМЕНЕНО]** ADR-VL-01 |
+| `GET /api/v1/sources` | — | `[SourceStatus]` | Состояние источников (`enabled`/`draining`) — за `X-Api-Key` (ADR-VL-10) |
+| `POST /api/v1/sources/{name}/enable` | — | `SourceStatus` | Ручное включение — за `X-Api-Key` (ADR-VL-10) |
+| `POST /api/v1/sources/{name}/disable` | — | `SourceStatus` | Ручное выключение (drain) — за `X-Api-Key` (ADR-VL-10) |
 | `GET /api/v1/health/ready` | — | `{status, deps}` | Readiness |
 | `GET /api/v1/health/live` | — | `{status}` | Liveness |
-| `GET /api/v1/diagnostics/**` | — | — | Диагностика источников/очереди — за `X-Api-Key` (ADR-026) |
+| `GET /api/v1/diagnostics/**` | — | — | Диагностика источников/очереди — за `X-Api-Key` (ADR-VL-10) |
 
-[ВЛ] Ответ агента — **обычный текст** (`text/plain`), поэтому `requestId` наружу не отдаём, но всегда пишем в MDC/логи (ADR-017). Валидация входа — jakarta (`@NotBlank`), как в существующих DTO. ~~Все ответы содержат `requestId` (JSON)~~ → **[ОТМЕНЕНО]** вместе с JSON-контрактом.
+[ВЛ] Ответ агента — **обычный текст** (`text/plain`), поэтому `requestId` наружу не отдаём, но всегда пишем в MDC/логи (ADR-VL-01). Валидация входа — jakarta (`@NotBlank`), как в существующих DTO. ~~Все ответы содержат `requestId` (JSON)~~ → **[ОТМЕНЕНО]** вместе с JSON-контрактом.
 
-### 4.2 ~~JSON `POST /api/v1/agent/search`~~ — ОТМЕНЕНО (ADR-017)
+### 4.2 ~~JSON `POST /api/v1/agent/search`~~ — ОТМЕНЕНО (ADR-VL-01)
 
 [ВЛ] **Актуальный контракт MVP** — `POST /api/v1/agent/chat`:
 - тело: `{ "sessionId": "опционально", "text": "Минск — Брест на 15 июня" }`;
 - ответ: `200`, `Content-Type: text/plain`, тело — текст ответа агента (упоминает в том числе упавшие источники);
-- `sessionId` создаётся при первом обращении, TTL **15 мин** с последнего обращения (ADR-018);
-- переполнение очереди: `503` + `Retry-After: 5` (ADR-021);
+- `sessionId` создаётся при первом обращении, TTL **15 мин** с последнего обращения (ADR-VL-02);
+- переполнение очереди: `503` + `Retry-After: 5` (ADR-VL-05);
 - ошибки источников **не** превращаются в HTTP-ошибку — они в тексте (ADR-011).
 
 Ниже — старый JSON-контракт, оставленный как справочный материал:
@@ -138,7 +138,7 @@ com.workspace.storm.event
   "text": "Автобус Минск — Брест на 15 июня, один",
   "sessionId": null,
   "lang": "ru",
-  "deadlineMs": 15000,   // [ВЛ] ОТМЕНЕНО как ограничение: advisory-значение (ADR-025)
+  "deadlineMs": 15000,   // [ВЛ] ОТМЕНЕНО как ограничение: advisory-значение (ADR-VL-09)
   "maxOffers": 20
 }
 ```
@@ -201,7 +201,7 @@ com.workspace.storm.event
 }
 ```
 
-~~`POST /api/v1/agent/refine`~~ — **[ОТМЕНЕНО]** (ADR-017/019): уточнения приходят обычной репликой в `chat`, LLM сам решает, какие инструменты вызвать. Ниже — справка по старому контракту.
+~~`POST /api/v1/agent/refine`~~ — **[ОТМЕНЕНО]** (ADR-VL-01/019): уточнения приходят обычной репликой в `chat`, LLM сам решает, какие инструменты вызвать. Ниже — справка по старому контракту.
 
 ### 4.3 JSON ошибки (единый формат)
 
@@ -247,7 +247,7 @@ public record Offer(
 public interface SourceGateway {
     String sourceId();                      // [ВЛ] "atlasbus", "ticketbus", "bzd", "ticketpro", "belhotel"
     SourceKind kind();                      // BUS | TRAIN | EVENT | HOTEL
-    // [ВЛ] int priority() — ОТМЕНЕНО (ADR-021): порядок результатов = порядок завершения
+    // [ВЛ] int priority() — ОТМЕНЕНО (ADR-VL-05): порядок результатов = порядок завершения
     boolean supportsSuggest();              // есть ли справочник станций/городов
 }
 ```
@@ -310,8 +310,8 @@ public interface HotelGateway extends SourceGateway {
 public class SearchBusesTool {
     public ToolResult search(SearchIntent intent) {
         // список гейтвеев: atlasbus, ticketbus
-        // [ВЛ] forceSource и budget на источник — ОТМЕНЕНО (ADR-019): инструменты выбирает LLM,
-        // все выбранные источники выполняются параллельно и fan-in ждёт ВСЕХ (ADR-025)
+        // [ВЛ] forceSource и budget на источник — ОТМЕНЕНО (ADR-VL-03): инструменты выбирает LLM,
+        // все выбранные источники выполняются параллельно и fan-in ждёт ВСЕХ (ADR-VL-09)
         // PrincipalResult по каждому → ToolResult { offers, warnings }
     }
 }
@@ -332,10 +332,10 @@ public record ToolResult(
 
 - **Fan-out**: на каждый sourceJob (гейтвей + параметры) создаётся задача; выполняется на виртуальном потоке (`Thread.ofVirtual().name("src-<source>", 0).start()`); у каждого источника **свой таймаут** из `OkHttpProperties` (per-source оверрайды через `newBuilder()`, ADR-014).
 - **Per-source лимиты**: connect 5s, read 10s (bzd/ticketbus: 60s для тяжёлых POST), SSE read 10s + max duration 30s, callTimeout — **явно, покомпонентно, без `0` (= бесконечный)**.
-- **Fan-in** [ВЛ]: `CompletableFuture.allOf(...).join()` — **ждём ВСЕ источники**; каждый уже ограничен своим таймаутом, поэтому hang невозможен. Общего `deadline` нет, отмены нет (ADR-025, ПРОТ-01/02). `deadlineMs` из запроса, если передан, — **advisory**: пишем в лог/метрику, но не обрываем fan-in.
+- **Fan-in** [ВЛ]: `CompletableFuture.allOf(...).join()` — **ждём ВСЕ источники**; каждый уже ограничен своим таймаутом, поэтому hang невозможен. Общего `deadline` нет, отмены нет (ADR-VL-09, ПРОТ-01/02). `deadlineMs` из запроса, если передан, — **advisory**: пишем в лог/метрику, но не обрываем fan-in.
 - **Один источник — одно исключение**: гейтвей сам ловит всё и превращает в `PrincipalResult` (включая таймаут); наружу утекает только `InterruptedException` при shutdown.
-- **Skip** [ВЛ]: если `draining=true` или `enabled=false` — задача **не стартуется**, результат `SKIPPED`, метрика `source.skipped`. ~~`circuit OPEN`~~ — **ОТМЕНЕНО** (ADR-020).
-- **Порядок** [ВЛ]: результаты в порядке завершения; приоритетов и сортировки по `priority()` нет (ADR-021).
+- **Skip** [ВЛ]: если `draining=true` или `enabled=false` — задача **не стартуется**, результат `SKIPPED`, метрика `source.skipped`. ~~`circuit OPEN`~~ — **ОТМЕНЕНО** (ADR-VL-04).
+- **Порядок** [ВЛ]: результаты в порядке завершения; приоритетов и сортировки по `priority()` нет (ADR-VL-05).
 
 ```java
 public class ParallelExecutor {
@@ -443,19 +443,19 @@ disclaimer.visa=Проверьте визовые требования зара�
 | Планировщик | Период | Действие |
 |---|---|---|
 | `WarmupScheduler` | при старте (`initialDelay=0`) + повтор 5 мин | `bzd`, `ticketbus` warmup; фиксирует cookies/PHPSESSID; single-flight (`synchronized` как в `TicketBusClient.warmup`) |
-| ~~`CircuitScheduler`~~ | — | **[ОТМЕНЕНО]** (ADR-020): переходов OPEN/HALF_OPEN нет |
+| ~~`CircuitScheduler`~~ | — | **[ОТМЕНЕНО]** (ADR-VL-04): переходов OPEN/HALF_OPEN нет |
 | `CacheRefreshScheduler` | 5 мин | обновляет справочники городов (suggest) и тёплый кэш результатов (АНП-95, АНП-113) |
-| `SessionHousekeeper` | 1 мин | [ВЛ] вычищает истёкшие сессии (**TTL 15 мин** с последнего обращения, ADR-018), каскадом удаляет `session_message` |
+| `SessionHousekeeper` | 1 мин | [ВЛ] вычищает истёкшие сессии (**TTL 15 мин** с последнего обращения, ADR-VL-02), каскадом удаляет `session_message` |
 | `QueueMonitor` | 1 сек | метрика длины очереди; если `length > highWaterMark` — `queue.reject=true`; backpressure |
 
-Порядок старта: очередь → кэш → warmup ~~→ circuit~~ (circuit нет, ADR-020).
+Порядок старта: очередь → кэш → warmup ~~→ circuit~~ (circuit нет, ADR-VL-04).
 
-## 10. ~~Circuit breaker (детали реализации)~~ — ОТМЕНЕНО (ADR-020, ПРОТ-17)
+## 10. ~~Circuit breaker (детали реализации)~~ — ОТМЕНЕНО (ADR-VL-04, ПРОТ-17)
 
 Класс `CircuitBreaker`, `CircuitState(CLOSED/OPEN/HALF_OPEN)`, `CircuitRegistry`, `CircuitPolicy`, таблица `circuit_state` и `CircuitScheduler` **в MVP не реализуются** (ПРОТ-17/18). Вместо них:
 - per-source таймауты (ADR-013) — источник не может висеть бесконечно;
-- `MetricsCollector` + `AlertEvaluator` (WARN/ERROR) — видно, что источник деградировал (ADR-022);
-- ручной флаг `source_state.enabled` + `draining` — оператор сам решает, когда отключить (ADR-026);
+- `MetricsCollector` + `AlertEvaluator` (WARN/ERROR) — видно, что источник деградировал (ADR-VL-06);
+- ручной флаг `source_state.enabled` + `draining` — оператор сам решает, когда отключить (ADR-VL-10);
 - `403` → сообщение + **без retry**; `401` → один warmup-retry; `429`/`503` → ошибка сразу, **без пауз и без retry** (ADR-011/016);
 - retry одного логического запроса = **одна** ошибка в метриках (ADR-016);
 - кэш (TTL 5 мин) отдаётся только вместе с предупреждением пользователю.
@@ -484,9 +484,9 @@ public final class CachedResult<T> {
 ```
 - ключ кэша: `sourceId + endpoint + параметры-нормализованные`;
 - TTL: справочники 1 день, результаты 5 мин (АНП-95);
-- [ВЛ] при ошибке/таймауте источника — отдаём кэш **только вместе с предупреждением** пользователю; ~~`stale=true` при OPEN~~ — circuit нет (ADR-020).
+- [ВЛ] при ошибке/таймауте источника — отдаём кэш **только вместе с предупреждением** пользователю; ~~`stale=true` при OPEN~~ — circuit нет (ADR-VL-04).
 
-[ВЛ] `SessionStore` — **Postgres** (ADR-018), in-memory/Redis **не используем**:
+[ВЛ] `SessionStore` — **Postgres** (ADR-VL-02), in-memory/Redis **не используем**:
 ```java
 public final class Session {
     String id; Instant createdAt; Instant lastAccessAt; long ttlMinutes;  // ttl = 15 мин
@@ -494,16 +494,16 @@ public final class Session {
 public record SessionMessage(long id, String sessionId, String role, String text,
                              String requestId, Instant createdAt) {}
 ```
-- реплики пользователя и агента пишутся в `session_message`; контекст LLM = последние **20** сообщений (ADR-018/019);
+- реплики пользователя и агента пишутся в `session_message`; контекст LLM = последние **20** сообщений (ADR-VL-02/019);
 - `touch()` продлевает TTL при каждом обращении; истёкшая сессия → `SESSION_EXPIRED` (новый `sessionId`);
-- `state ∈ {NEW, ACTIVE, EXPIRED}`; **`CANCELLED` не делаем** — отмены нет (ADR-025);
-- ~~`Refiner` мержит `intent`/`steps`~~ — **[ОТМЕНЕНО]** (ADR-019): уточнения приходят репликами, LLM выбирает инструменты сам.
+- `state ∈ {NEW, ACTIVE, EXPIRED}`; **`CANCELLED` не делаем** — отмены нет (ADR-VL-09);
+- ~~`Refiner` мержит `intent`/`steps`~~ — **[ОТМЕНЕНО]** (ADR-VL-03): уточнения приходят репликами, LLM выбирает инструменты сам.
 
 ## 12. Очередь
 
 `RequestQueue` — bounded `ArrayBlockingQueue<RequestTask>` (лимит из `QueueProperties`, default 100).
-- [ВЛ] **FIFO, без приоритетов и aging**; порядок задаёт очередь, а не сортировка (ADR-021, ПРОТ-05). ~~`priority` в `SearchRequest`~~ — **ОТМЕНЕНО**, такого поля в MVP нет;
-- backpressure: при заполнении (`ArrayBlockingQueue(100)`) → `QUEUE_REJECTED` **503 + `Retry-After: 5`** (АНП-109, ADR-021);
+- [ВЛ] **FIFO, без приоритетов и aging**; порядок задаёт очередь, а не сортировка (ADR-VL-05, ПРОТ-05). ~~`priority` в `SearchRequest`~~ — **ОТМЕНЕНО**, такого поля в MVP нет;
+- backpressure: при заполнении (`ArrayBlockingQueue(100)`) → `QUEUE_REJECTED` **503 + `Retry-After: 5`** (АНП-109, ADR-VL-05);
 - дедупликация в очереди по `requestId` (повторный запрос сливается);
 - consumer pool: 4–8 потоков, каждый берет `RequestTask` → `SearchOrchestrator.process`.
 
@@ -512,7 +512,7 @@ public record SessionMessage(long id, String sessionId, String role, String text
 - `MetricsCollector` — инкрементальные счётчики с тегами:
   - `source.errors{source, code}` — на каждую ошибку источника;
   - `source.latency{source}_ms{histogram}`; `source.skipped{source}`;
-  - ~~`source.circuit{source}=open`~~ — **[ОТМЕНЕНО]** (ADR-020/022); имена метрик — по словарю в `25_contradictions.md` (ПРОТ-20);
+  - ~~`source.circuit{source}=open`~~ — **[ОТМЕНЕНО]** (ADR-VL-04/022); имена метрик — по словарю в `25_contradictions.md` (ПРОТ-20);
   - `parse.errors{source}`; `all.sources.disabled`; `queue.length`, `queue.rejected`;
   - `session.active`, `llm.errors{code}`.
 - `AlertEvaluator` — локальные пороги (без Prometheus, чтобы не добавлять зависимость): `parse.errors > 10/мин` → лог WARN + webhook-заглушка; 404/редирект домена → alert «обновить Constants»; SSL → alert «проверить сертификат»; капча → alert «анти-бот».
@@ -521,9 +521,9 @@ public record SessionMessage(long id, String sessionId, String role, String text
 
 ## 14. Контракты целостности
 
-1. **Идемпотентность**: `requestId` уникален на (пользователь, короткое окно); повторный `requestId` не попадает в очередь второй раз. ~~возвращает тот же `SearchResponse`~~ — **[ОТМЕНЕНО]** (ADR-017): ответ — текст, повтор отдаётся из кэша/очереди.
-2. **Атомарность сессии**: [ВЛ] реплики сессии пишутся последовательно в `session_message`; отдельных refine-веток нет (ADR-017/019).
-3. **Завершённость параллельности**: [ВЛ] `ParallelExecutor` ждёт **все** задачи; «зависший» вызов невозможен — каждый источник ограничен per-source таймаутом. Отмены и принудительного закрытия потоков нет (ADR-025, ADR-013).
+1. **Идемпотентность**: `requestId` уникален на (пользователь, короткое окно); повторный `requestId` не попадает в очередь второй раз. ~~возвращает тот же `SearchResponse`~~ — **[ОТМЕНЕНО]** (ADR-VL-01): ответ — текст, повтор отдаётся из кэша/очереди.
+2. **Атомарность сессии**: [ВЛ] реплики сессии пишутся последовательно в `session_message`; отдельных refine-веток нет (ADR-VL-01/019).
+3. **Завершённость параллельности**: [ВЛ] `ParallelExecutor` ждёт **все** задачи; «зависший» вызов невозможен — каждый источник ограничен per-source таймаутом. Отмены и принудительного закрытия потоков нет (ADR-VL-09, ADR-013).
 4. **Валидность оффера**: ни один `Offer` с `null` в обязательных полях (domain, from, to, departure, price) не попадает в ответ — режет `OfferNormalizer`.
 5. **Дедупликация** single-pass: на входе (парсер) по `rideId`, на выходе (Combiner) по нормализованному `offerId`.
 6. **Валютная целостность**: цена сравнивается только в BYN; если валюта неизвестна — оффер помечается `attributes.currencyKnown=false` и не участвует в сортировке по цене.
@@ -539,7 +539,7 @@ public record SessionMessage(long id, String sessionId, String role, String text
 | **1. Исключения** | новая иерархия поверх существующих `*Client/ServiceException`, `ParseException`, карта маппинга | unit-тесты карты, advise-тесты |
 | **2. Unified-модель + Normalizer** | `Offer`, `Price`, `GeoPoint`, мапперы с 5 парсеров | unit-тесты нормализации (копейки, валюты, null, диапазоны) |
 | **3. Гейтвеи** | 5 адаптеров поверх существующих клиентов | unit (mock клиента) + интеграция по живому источнику |
-| **4. ~~Circuit + Registry~~** | **[ОТМЕНЕНО]** (ADR-020) — вместо: per-source таймауты, `source.errors`+алерты, `enabled`/`draining` | unit `SourceErrorCountTest` (retry = 1 ошибка) |
+| **4. ~~Circuit + Registry~~** | **[ОТМЕНЕНО]** (ADR-VL-04) — вместо: per-source таймауты, `source.errors`+алерты, `enabled`/`draining` | unit `SourceErrorCountTest` (retry = 1 ошибка) |
 | **5. ParallelExecutor + Collector** | fan-out/in, **await-all без дедлайна и отмены**, порядок по завершению | unit-тесты per-source таймаутов и частичных результатов |
 | **6. Tools** | [ВЛ] инструменты-LLM по одному на источник (`search_atlasbus`, `search_ticketbus`, `search_bzd`, `search_ticketpro`, `search_belhotel`, `get_offers`) + ToolResult | тесты: «один источник лежит — второй отдаёт, упавший упомянут в тексте» |
 | **7. Combiner + Ranker** | дедуп, комбо, бюджет, сортировка, «отель рядом» | unit-тесты склейки (1–4 домена) |
@@ -557,13 +557,13 @@ public record SessionMessage(long id, String sessionId, String role, String text
 2. Файлы: создать пустые каркасы (интерфейс + заглушка), подключить в Spring (bean-граф).
 3. Реализация happy-пути `U` (по выбранному объёму).
 4. Обработка каждого unhappy-кода из каталога 1–235, относящегося к `U` (исключение → `ErrorCode` → сообщение → метрика → alert).
-5. Конфиги: `application.properties` (`QueueProperties`, `SessionProperties`, `SourceProperties` (таймауты), `LlmProperties`/`AgentProperties`). ~~`CircuitPolicy`~~ — **[ОТМЕНЕНО]** (ADR-020).
+5. Конфиги: `application.properties` (`QueueProperties`, `SessionProperties`, `SourceProperties` (таймауты), `LlmProperties`/`AgentProperties`). ~~`CircuitPolicy`~~ — **[ОТМЕНЕНО]** (ADR-VL-04).
 6. Юнит-тесты: happy, каждый happy-вариант, каждое исключение, таймауты, null, дедуп.
 7. Интеграционные тесты (mock OkHttp `MockWebServer` — добавить в тесты; live-интеграции уже есть).
 8. Тесты контрактов API (JSON фикстуры) + тесты сообщений (i18n).
 9. Метрика/алерт для каждой ошибки; MDC-логи.
 10. Документирование в `docs/`; обновление README-карты.
-11. Кросс-проверка: не конфликтует с фазами (FIFO-порядок, deadlock'и). ~~cancel~~ — **[ОТМЕНЕНО]** (ADR-025).
+11. Кросс-проверка: не конфликтует с фазами (FIFO-порядок, deadlock'и). ~~cancel~~ — **[ОТМЕНЕНО]** (ADR-VL-09).
 12. Ревью-чеклист + обновление списка известных ограничений.
 
 Пример декомпозиции одной единицы (фрагмент, чтобы таргетировать гранулярность ~30–50 шагов на единицу):
