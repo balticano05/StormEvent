@@ -2,56 +2,78 @@
 
 Исходники: `docs/21…23` (хэппи/анхэппи пути, спека ошибок, блюпринт). Доки — **не гарантия**: каждое допущение помечено шагом «проверить/валидировать». План идёт «сверху вниз»: сначала решения (в т.ч. выбор БД), потом структура, потом реализация, потом тесты.
 
+**Все решения владельца по шагу 1 собраны в `25_contradictions.md`** (ПРОТ-01…27, разделы 0, 0.1, 0.2). План приведён в соответствие с ними: шаги, отменённые решениями, помечены `~~отменено~~` или `[ОТМЕНЕНО]`, а решения владельца — `[ВЛ]`.
+
 Условные обозначения:
 - `[✓]` — action, после которой должен быть зелёный тест/компиляция.
 - `[ПРОВ]` — проверка допущения (данные, живой источник, конфиг), план не гарантирует истинность доки.
 - `[МЕТ]` — обязательная метрика для шага.
 - `[АЛЕРТ]` — обязательный алерт для шага.
+- `[ВЛ]` — решение владельца (источник: `25_contradictions.md`), спорить не нужно.
+- `[ОТМЕНЕНО]` — шаг снят решением владельца, не выполняется.
 
 ---
 
 ## ФАЗА 0. Контекст и решения (шаги 1–40)
 
-1. [ПРОВ] Прочитать все доки: README, 01–23. Выписать противоречия (напр. BZD таймауты в 17 vs 23).
-2. [ПРОВ] Проверить актуальность `pom.xml`: Java 21, Spring Boot 4.1.1, OkHttp 5.5.0, Jsoup, Jackson 3.
-3. [ПРОВ] Проверить, какие интеграционные тесты сейчас «живые» и требуют сети (AtlasClientIntegrationTest и др.).
+1. [✓] [ПРОВ] Прочитать все доки: README, 01–23. Выписать противоречия → **выполнено**: `25_contradictions.md` (27 противоречий, решения владельца).
+2. [✓] [ПРОВ] Проверить актуальность `pom.xml`: Java 21, Spring Boot 4.1.1, OkHttp 5.5.0, Jsoup, Jackson 3 → **выполнено** (подтверждено; нет jdbc/flyway/postgres/actuator — Ф-5).
+3. [✓] [ПРОВ] Проверить, какие интеграционные тесты сейчас «живые» и требуют сети → **выполнено**: `AtlasClientIntegrationTest`, `BzdClientIntegrationTest`, `TicketBusClientIntegrationTest`, `BelHotelClientIntegrationTest`, `TicketProServiceIntegrationTest` (Ф-6).
 4. Создать `docs/decisions.md` — журнал АДР (architectural decision records). Каждое решение — дата, контекст, решение, последствия.
-5. Решение АДР-001: **база данных**. Выбрать **PostgreSQL 16** (реляционные данные: сессии, кэш, состояния, логи, метрики).
+5. Решение АДР-001: **база данных**. Выбрать **PostgreSQL 16** (реляционные данные: сессии, кэш, состояния, логи, метрики). [ВЛ] Подтверждено.
 6. Обоснование АДР-001: нужен SQL (агрегации метрик, TTL-чистки, индексы, транзакции сессий); KV-хранилище не даёт запросов к метрикам.
 7. Альтернативы АДР-001: H2 (только тесты), Redis (только кэш/сессии, не метрики) — зафиксировать «почему нет».
 8. Решение АДР-002: **SQL-доступ**. Использовать **Spring Data JDBC + JdbcTemplate** (без JPA: сущности источников не энтити БД).
 9. Обоснование АДР-002: доменная модель (Offer и сущности источников) отделена от таблиц; JPA-магия принесёт больше проблем.
 10. Решение АДР-003: **миграции**. Flyway (`flyway-core`) как единственный инструмент изменения схемы.
 11. Решение АДР-004: **тестовая БД**. H2 в PostgreSQL-режиме для юнит/интеграционных тестов; `Testcontainers` — опционально для pg-специфики.
-12. Решение АДР-005: **кэш и сессии поверх Postgres** через таблицы (без внешних Redis-зависимостей на первом этапе).
-13. Решение АДР-006: **очередь** — in-memory `ArrayBlockingQueue` + таблица `request_log` для аудита; внешний брокер не нужен на МВП.
-14. Решение АДР-007: **схема пакетов** — по блюпринту 23 (gateway/normalize/orchestration/agent/circuit/cache/session/queue/scheduler/exception/web/handler/metrics).
-15. Решение АДР-008: **единственный OkHttpClient** + пер-источниковые оверрайды (как в BzdClient/TicketBusClient) — не плодить HttpClients.
+12. Решение АДР-005: **кэш и сессии поверх Postgres** через таблицы (без внешних Redis-зависимостей на первом этапе). [ВЛ] Подтверждено.
+13. Решение АДР-006: **очередь** — in-memory `ArrayBlockingQueue(100)`, **FIFO без приоритетов и старения**; таблица `request_log` для аудита. [ВЛ] ПРОТ-05, У-6.
+14. Решение АДР-007: **схема пакетов** — по блюпринту 23 (gateway/normalize/orchestration/agent/cache/session/queue/scheduler/exception/web/handler/metrics; **circuit — исключить**, [ВЛ] ПРОТ-08/09).
+15. Решение АДР-008: **HTTP-клиенты** — базовый `OkHttpClient` + `newBuilder()`-производные; отдельный клиент/пул для SSE; **несколько клиентов разрешены** ради параллелизма. [ВЛ] ПРОТ-03 (план 24:29 — «единственный клиент» отменён).
 16. Решение АДР-009: **виртуальные потоки** для fan-out к источникам (Java 21 virtual threads), без executor-пулов на источник.
-17. Решение АДР-010: **deadline-модель** — у каждого запроса `deadlineMs` (default 15000), бюджет источников 90%.
+17. ~~Решение АДР-010: deadline-модель (default 15000, бюджет 90 %)~~ **[ОТМЕНЕНО]** [ВЛ] ПРОТ-01/02: общего обрыва нет — **ждём выполнения всех** источников; `deadlineMs` — advisory; таймауты per-source; LLM — агентный цикл (шаг 40.1).
 18. Решение АДР-011: **request-id** генерируется на входе, пробивается через MDC и таблицы.
-19. [ПРОВ] Уточнить у владельца: обязателен ли «живой» LLM-провайдер на первом МВП или достаточно rule-based fallback.
-20. Решение АДР-012: LLM — за интерфейсом `LlmGateway`; провайдер не фиксируется (абстракция выше).
-21. [ПРОВ] Уточнить домены МВП: BUS+TRAIN только, или сразу EVENT/HOTEL для склейки.
-22. Решение АДР-013: порядок реализации фаз — БД → исключения → модель → гейтвеи → circuit → параллельность → tools → combiner → LLM → web → очередь/сессии/кэш → метрики → E2E.
+19. [✓] [ПРОВ] LLM-провайдер → **закрыто**: реальный LLM, **OpenRouter** (function calling), ключ будет позже; до ключа — fallback (У-4, В-9/В-14).
+20. Решение АДР-012: LLM — за интерфейсом `LlmGateway`; провайдер — OpenRouter, конфиг из env `OPENROUTER_API_KEY`/`OPENROUTER_MODEL`. [ВЛ]
+21. [✓] [ПРОВ] Домены МВП → **закрыто**: **все источники, у которых есть API** (`atlasbus`, `ticketbus`, `bzd`, `ticketpro`, `belhotel`). [ВЛ] У-5.
+22. Решение АДР-013: порядок реализации фаз — БД → исключения → модель → гейтвеи → параллельность → tools → combiner → LLM → web → очередь/сессии/кэш → метрики → E2E. **Circuit breaker — не делаем.** [ВЛ]
 23. Составить карту «каталог ошибок 1–235 → фаза/класс/тест» (пустая матрица, заполняется по фазам).
-24. [ПРОВ] Проверить наличие СУБД и прав: `postgres` локально или Docker.
+24. [✓] [ПРОВ] Наличие СУБД → **закрыто**: **Docker Compose** (`compose.yml`, `localhost:5432`). [ВЛ] В-3.
 25. Создать ветку `plan/implementation` от текущей (или продолжить DOCS — по решению).
 26. Создать в репо `docs/implementation/` для фасов-планов и чеклистов.
 27. Составить список внешних переменных окружения (DB_URL, DB_USER, DB_PASSWORD) и завести `.env.example`.
 28. Завести `.gitignore`: прописать `*.env`, локальные логи, `.idea` (проверить текущий).
-29. [ПРОВ] Перепроверить, что `application.properties` — единственный источник okhttp-конфигов сейчас.
-30. Спланировать тест-стратегию: unit (JUnit5), контрактные (JSON-фикстуры), интеграционные (MockWebServer), e2e.
+29. [✓] [ПРОВ] Перепроверить, что `application.properties` — единственный источник okhttp-конфигов сейчас → **выполнено**: также `OkHttpProperties.java` (connect 5s, read/write 10s, **callTimeout 0**, пул 5) — Ф-3.
+30. Спланировать тест-стратегию: unit (JUnit5 + JSON-фикстуры) + **интеграционные на живых API** (профиль `integration`, отдельный прогон); e2e через MockMvc. [ВЛ] У-8.
 31. Добавить зависимости в pom: `spring-boot-starter-jdbc`, `postgresql` (runtime), `flyway-core`, `spring-boot-starter-actuator` (опц.), тест: `MockWebServer`, `H2`.
 32. [ПРОВ] Проверить, что Jackson 3 (`tools.jackson`) совместим с `spring-boot-starter-jdbc`/flyway (отдельных конфликтов не вносит).
 33. Решение АДР-014: именование таблиц snake_case, PK — `bigint identity` или UUID (для request_id/session_id).
 34. Решение АДР-015: идентификаторы сущностей источников — строковые `source:kind:externalId`, в БД как `varchar(128)` с уникальным индексом.
-35. Написать ADR-016: временные зоны в БД — `timestamptz`, всё хранится в UTC.
+35. Написать ADR-016: временные зоны — **Europe/Minsk для всех расчётов, стыковок, границ суток и отображения**; в БД `timestamptz` (технически UTC), API отдаёт `+03:00`. [ВЛ] ПРОТ-15.
 36. Написать ADR-017: валюта BynAmount — `numeric(12,2)` + `currency char(3)`, нормализация в приложении.
 37. [ПРОВ] Проверить нагрузку: сколько запросов/час ожидается (для размера пула и TTL-политик).
 38. Составить чеклист «нельзя»: никакой секрет в репо, никакого ath/bot-anti в логах, никаких `*ClientException` наружу из tools.
 39. Зафиксировать определение done для фазы: компиляция + все тесты фазы зелёные + ADR записан.
 40. Первый коммит плана: `docs/24_implementation_plan.md` + map в README.
+
+### 40.1. Решения владельца, добавленные после разбора противоречий (`25_contradictions.md`)
+
+40.1. [ВЛ] **ADR-017 (текстовый контракт)**: ответ агента — **обычный текст** (`text/plain`), не JSON. Один эндпоинт `POST /api/v1/agent/chat` (`sessionId` + `text`) → строка ответа. `ResponseDto`/сериализация офферов/SSE — не делаем (У-1, В-7).
+40.2. [ВЛ] **ADR-018 (сессия-чат)**: сессия = диалог; таблица `session_message` (роль/текст/время/`requestId`); **TTL 15 минут** с последнего обращения; состояния `NEW|ACTIVE|EXPIRED` (без `CANCELLED`) (У-2, ПРОТ-06/07).
+40.3. [ВЛ] **ADR-019 (агентный цикл)**: LLM (OpenRouter, function calling) **сам выбирает инструменты-источники**, мы выполняем вызовы параллельно и **ждём все**, результаты возвращаем в LLM; контекст — вся сессия, максимум **20 сообщений** (`llm.contextWindow=20`); лимит раундов — **на уровне агента** (`AgentProperties.llm.maxToolRounds`, по умолчанию 2 + правило в системном промпте, жёсткой остановки в коде нет; позже так же настроим для n8n) (0.2, В-11/В-12/В-13).
+40.4. [ВЛ] **ADR-020 (circuit breaker отложен)**: состояния CLOSED/OPEN/HALF_OPEN, `circuit_state`, half-open пробы — **не делаем**. Вместо: per-source таймауты, alert по счётчику ошибок, ручной флаг `source_state.enabled` (ПРОТ-08/09/10/11/12).
+40.5. [ВЛ] **ADR-021 (очередь простая)**: `ArrayBlockingQueue(100)`, FIFO, 4–8 воркеров, переполнение → 503 + `Retry-After: 5`. Без приоритетов, aging, `pausedUntil`/cooldown (ПРОТ-05, ПРОТ-12, У-6).
+40.6. [ВЛ] **ADR-022 (наблюдаемость)**: Prometheus/actuator **не подключаем**; счётчики `MetricsCollector` + `AlertEvaluator` с логом WARN (ПРОТ-20/21).
+40.7. [ВЛ] **ADR-023 (ошибки источников)**: 403 → сообщение пользователю **без повторов**; 1 пользовательский запрос = 1 ошибка (retry не накапливается); упавший источник всегда упоминается в ответе (ПРОТ-04/10/11).
+40.8. [ВЛ] **ADR-024 (модель оффера)**: **цены и тарифы подробно**, остальное минимум — `from`, `to`, `date/time`, `price`+`currency`, `seats`, `tariffName`/`class`, `source`, `kind`, `url`/`externalId`. `attributes`/`baggage`/`documents`/`cancellation`/`transfers` — после MVP (ПРОТ-19, В-10).
+40.9. [ВЛ] **ADR-025 (отмена)**: отмена запроса пользователем **не делается** (У-7).
+40.10. [ВЛ] **ADR-026 (админка)**: `/api/v1/sources/**` и `/api/v1/diagnostics/**` — заголовок `X-Api-Key` из `STORM_ADMIN_KEY` + CORS-whitelist (ПРОТ-26).
+40.11. [ВЛ] **ADR-027 (анти-бот)**: обход не делаем — уважаем `robots.txt`, при анти-боте сообщение пользователю + alert, источник отключается вручную (ПРОТ-27).
+40.12. [ВЛ] **ADR-028 (очередь приоритетов в доках)**: `13:25-26`, `13:73`, `15:36-38`, `23:484-487` — помечаются устаревшими (АНП-83 не применима).
+40.13. [ВЛ] **ADR-029 (Jackson/ResponseStatus)**: фикс Jackson 2→3 аннотаций в `entity/atlas/*`; убрать `@ResponseStatus(BAD_GATEWAY)` (ПРОТ-23/24).
+40.14. [ВЛ] **ADR-030 (warmup в гейтвеях)**: `BzdService`/`BelHotelService` не заводим; warmup/retry в гейтвеях + `WarmupScheduler` (ПРОТ-25).
+40.15. [ВЛ] Пересобрать `13`, `16`, `22`, `23` под эти решения (устаревшие формулировки вычеркнуть, ссылки на `25_contradictions.md`).
 
 ## ФАЗА 1. Каркас приложения (41–80)
 
@@ -191,19 +213,19 @@
 
 ## ФАЗА 3. БД: структурные таблицы, ключи, индексы (171–300)
 
-171. Спроектировать ER-модель (текстовая): session, session_refine, request_log, source_state, circuit_state, cached_result, idempotency, source_error_log, stats_hourly.
+171. Спроектировать ER-модель (текстовая): session, **session_message**, request_log, source_state, cached_result, idempotency, source_error_log, stats_hourly. ~~circuit_state~~ — [ВЛ] не делаем (ADR-020).
 172. Нарисовать диаграмму в `docs/db-er.md` (ascii или mermaid).
 173. `V1` таблица `storm.session`: id uuid PK, intent jsonb, lastAccessAt timestamptz, createdAt timestamptz, ttlSeconds int, state varchar(16).
 174. `session` правила: `lastAccessAt` обновляется каждым обращением; TTL чистка по `createdAt + ttl`.
 175. Индекс `session(createdAt)` для housekeeper; `session(state)` для внешних.
-176. `V2` таблица `session_refine`: sessionId fk → session.id (on delete cascade), stepNo int, refineJson jsonb, appliedAt timestamptz, PK (sessionId, stepNo).
-177. Индекс `session_refine(sessionId)` — уже покрыт PK (композитный — проверка).
+176. `V2` таблица `session_message`: id bigint identity PK, sessionId fk → session.id (on delete cascade), role varchar(8) (`user`|`agent`), kind varchar(16) (`search`|`refine`|`answer`|`system`), text text, requestId uuid, createdAt timestamptz. [ВЛ] ADR-018 — **диалог вместо `session_refine`**.
+177. Индекс `session_message(sessionId, createdAt)` — выборка контекста для LLM (последние 20).
 178. ADR-029: FK `ON DELETE CASCADE` для дочерних записей сессии.
 179. `V3` таблица `source_state`: source varchar(32) PK, enabled boolean, draining boolean, rampUntil timestamptz, updatedAt timestamptz.
 180. Правило: `draining=true` ⇒ новые запросы не идут; `enabled=false` ⇒ мгновенный стоп (АНП-106/101).
-181. `V4` таблица `circuit_state`: key varchar(64) PK (source:endpoint), state varchar(16), failures int, failuresWindowStart timestamptz, openedAt timestamptz, lastSuccessAt timestamptz, lastFailureAt timestamptz.
-182. Индексировать `circuit_state(state)` — поиск «все OPEN» для health/дашборда.
-183. ADR-030: circuit-state храним в БД (переживает рестарт, АНП-111), in-memory — только быстрая копия.
+181. ~~`V4` таблица `circuit_state`~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-020: circuit breaker не делаем.
+182. ~~Индексировать `circuit_state(state)`~~ — **[ОТМЕНЕНО]** вместе с 181.
+183. ~~ADR-030: circuit-state в БД~~ — **[ОТМЕНЕНО]**; метрики ошибок источников идут в `source_error_log`/`stats_source_hourly`.
 184. `V5` таблица `cached_result`: cacheKey varchar(255) PK, source varchar(32), domain varchar(16), payloadJson jsonb, createdAt timestamptz, expiresAt timestamptz, stale boolean.
 185. Индекс `cached_result(expiresAt)` — housekeeper чистит протухшее.
 186. Индекс `cached_result(source, domain)` — для статистики.
@@ -219,22 +241,22 @@
 196. `V9` таблица `stats_source_hourly`: hour timestamptz, source varchar(32), code varchar(64), count int, PK (hour, source, code).
 197. Правило: агрегация раз в час из request_log/source_error_log (см. фазу 15).
 198. `V10` — отдельная миграция `GRANT`/роли (если нужно) — отложить.
-199. Сформулировать типы ключей: requestId/sessionId — UUID; source_state/circuit/cache — строковые natural keys.
+199. Сформулировать типы ключей: requestId/sessionId — UUID; source_state/cache — строковые natural keys. ~~circuit_state~~ — [ВЛ] не делаем.
 200. ADR-031: natural keys для «состояний источника» (source name) — без суррогатных id.
 201. Проверить уникальность `offerId` не храним в БД (офферы транзитные) — принять.
 202. ADR-032: офферы и комбо НЕ персистятся (вычисляются на лету), только сессия/логи/кэш.
 203. Написать миграции V1–V9 одним PR (рефакторинг безопасности).
 204. Написать `FlywayMigrationTest`: применить все V, проверить таблицы `information_schema`.
-205. Написать мапперы схемы: `SessionMapper`, `SourceStateMapper`, `CircuitStateMapper`, `CachedResultMapper`.
+205. Написать мапперы схемы: `SessionMapper`, `SessionMessageMapper`, `SourceStateMapper`, `CachedResultMapper`. ~~`CircuitStateMapper`~~ — [ВЛ] не делаем.
 206. Написать юнит-тесты мапперов (кортеж → объект, null-поля).
-207. Создать репозитории: `SessionRepository`, `SourceStateRepository`, `CircuitStateRepository`, `CacheRepository`, `IdempotencyRepository`, `RequestLogRepository`, `SourceErrorLogRepository`, `StatsRepository`.
+207. Создать репозитории: `SessionRepository`, `SessionMessageRepository`, `SourceStateRepository`, `CacheRepository`, `IdempotencyRepository`, `RequestLogRepository`, `SourceErrorLogRepository`, `StatsRepository`. ~~`CircuitStateRepository`~~ — [ВЛ] не делаем.
 208. Каждый репозиторий: интерфейс + impl на `NamedParameterJdbcTemplate`.
 209. `SessionRepository` методы: `insert`, `get`, `updateIntent`, `touch`, `delete`, `findExpired`.
 210. Написать тест `SessionRepositoryTest` (H2): CRUD, TTL-выборка.
 211. `SourceStateRepository`: `upsert`, `get`, `findByEnabled`.
 212. Написать тест `SourceStateRepositoryTest`: upsert-idempotent.
-213. `CircuitStateRepository`: `upsert`, `get`, `findAllOpen`, `clear`.
-214. Написать тест `CircuitStateRepositoryTest`.
+213. ~~`CircuitStateRepository`~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-020.
+214. ~~Написать тест `CircuitStateRepositoryTest`~~ — **[ОТМЕНЕНО]** вместе с 213.
 215. `CacheRepository`: `get`, `put`, `findExpired`, `delete`.
 216. Написать тест `CacheRepositoryTest` (stale-переходы).
 217. `IdempotencyRepository`: `get`, `putIfAbsent`, `findExpired`.
@@ -259,10 +281,10 @@
 236. Написать тест `TtlCleanupTest`: 100 expired + 10 живых → удалены только expired.
 237. Оптимизация `idempotency`: чистить раз в минуту, batch delete by expiresAt.
 238. Написать тест дедупликации на уровне репозитория.
-239. Профиль индексов: уникальные — session(id-app), source_state(source), circuit_state(key), cached_result(cacheKey).
+239. Профиль индексов: уникальные — session(id-app), source_state(source), cached_result(cacheKey).
 240. Описание составных индексов: `source_error_log(source, code, createdAt)` — для алертов по частоте.
-241. Описание partial index: `WHERE state='OPEN'` на circuit_state — для мгновенного findAllOpen.
-242. Создать миграцию V13 с partial index (pg-only) + guard fallback H2.
+241. ~~Описание partial index `WHERE state='OPEN'` на circuit_state~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-020.
+242. ~~Создать миграцию V13 с partial index (pg-only)~~ — **[ОТМЕНЕНО]** вместе с 241.
 243. [ПРОВ] Проверить на pg hв high-level план: partial index не пессимизирует H2-тесты.
 244. Полнотекст: пока не нужен (текст промпта не ищем) — ADR-034 отказ от pg_trgm.
 245. Валидировать нормализацию: все `varchar` с кодировкой utf8, `COLLATE "C"` где регистр не важен (id).
@@ -304,8 +326,8 @@
 281. Тест на SQL-инъекцию: `message='; DROP TABLE...` сохраняется как данные (юнит-тест репозитория).
 282. Создать хранимую политику вычисления TTL: `session.ttlSeconds` задаётся приложением (не в БД-функции).
 283. ADR-038: TTL в приложении (простота), БД только хранит значение.
-284. Установить дефолт TTL: session 30 мин актив, 15 мин idle (из док).
-285. Прописать в `SessionProperties`.
+284. Установить дефолт TTL: сессия активна **15 минут** с последнего обращения (продлевается каждым запросом), `state` без `CANCELLED`. [ВЛ] ПРОТ-06/У-7.
+285. Прописать в `SessionProperties` (`sessionTtlMinutes=15`).
 286. Написать тест расчёта TTL (активный/идл).
 287. Оптимизация `idempotency`: TTL 5 минут (окно дедупликации одного ручного ретрая).
 288. Прописать `IdempotencyProperties`.
@@ -348,11 +370,11 @@
 322. Написать тест: после 50 параллельных запросов HMS-пул не растёт без причины (assert max<=N).
 323. Оптимизация транзакций: `session`-обновления — `readCommitted` + короткие транзакции.
 324. ADR-041: iso-level read committed; SET `default_transaction_isolation` не меняем.
-325. Проверить deadlock-случаи: два потока обновляют session и circuit — тест-проверка.
-326. Написать тест: параллельные `upsert` circuit_state → без deadlock (retry-on-conflict).
+325. Проверить deadlock-случаи: два потока обновляют `session` — тест-проверка.
+326. ~~Написать тест: параллельные `upsert` circuit_state~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-020.
 327. Оптимизация ошибок: `source_error_log` вставка в fire-and-forget с `try/catch` (не роняет поиск).
 328. Написать тест: при недоступной лог-таблице поиск продолжается (основной поток не падает).
-329. Настроить `metrics` вывод в Prometheus-формате (actuator `/actuator/prometheus`) — зависимость micrometer-registry-prometheus.
+329. ~~Настроить `metrics` вывод в Prometheus-формате (actuator + micrometer-registry-prometheus)~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-022: метрики своими счётчиками + `AlertEvaluator` с логом WARN; вернуться отдельным решением.
 330. Написать тест: готовность метрик после запросов.
 331. [АЛЕРТ] Алерт `db.query.errors > 5/мин` — лог ERROR.
 332. [АЛЕРТ] Алерт `db.pool.wait_ms > 200` медиана — WARN.
@@ -396,12 +418,12 @@
 370. [АЛЕРТ] Алерт «миграции не применены / не сходятся» — лог ERROR + ready=false.
 371. Оптимизация: кэш города (suggest) обновляется из справочников — см. CacheRefreshScheduler (фаза 14), но поле — cached_result.
 372. Написать тест: `CachedResult` помечается stale при expiresAt < now.
-373. Оптимизация частых чтений circuit_state: in-memory копия + `@Scheduled` синк с БД раз в 5 сек.
-374. Написать тест синхронизации: изменение в БД подтягивается в память.
-375. ADR-044: circuit_state пишет напрямую в БД, чтения преимущественно из памяти (5 сек stale-окно допустимо).
-376. Проверить согласованность: N экземпляров (2 JVM) — память не синхронизирована между собой; read/write через БД.
+373. ~~Оптимизация частых чтений circuit_state: in-memory копия + синк раз в 5 сек~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-020.
+374. ~~Написать тест синхронизации circuit~~ — **[ОТМЕНЕНО]** вместе с 373.
+375. ~~ADR-044: circuit_state в БД, чтения из памяти~~ — **[ОТМЕНЕНО]** вместе с 373.
+376. ~~Проверить согласованность N экземпляров (circuit в памяти)~~ — **[ОТМЕНЕНО]** вместе с 373.
 377. ADR-045: архитектура МВП single-node; multi-node — в будущем (БД остаётся источником истины).
-378. Составить метрику `source.circuit.memory.drift` (если усложнить) — опционально.
+378. ~~Метрика `source.circuit.memory.drift`~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-020.
 379. [ПРОВ] Stress-тест БД: 50 потоков × 100 операций (смесь session/cache/log) — без ошибок.
 380. Записать результаты stress-теста в `docs/db-load-results.md`.
 381. Оптимизация строки подключения: `sslmode=require` в проде (проперти).
@@ -550,7 +572,7 @@
 515. Реализовать `AtlasGateway`:
     515a. маппинг TransportQuery → AtlasSearchRequest;
     515b. вызов `AtlasClient.search`;
-    515c. быстрый сбой: если circuit OPEN (см. фазу 8) — SKIPPED;
+    515c. быстрый сбой: если источник выключен в `source_state` (`enabled=false`/`draining`) — SKIPPED; ~~circuit~~ — [ВЛ] не делаем (ADR-020);
     515d. обработка HTTP-кодов (500,502,503,429,403,401,404, timeout) → PrincipalResult правильный;
     515e. SSE partial из AtlasSearchResult → `PARTIAL` с rides;
     515f. ошибка без rides → FAILURE;
@@ -560,7 +582,7 @@
 517. Написать интеграционный тест против живого Atlas (tag=live, exclude в CI).
 518. Реализовать `BzdGateway`:
     518a. маппинг под BzdClient (station resolve + searchRoute);
-    518b. warmup-зависимость: если cookie сломан → 403 → retry warmup → failure;
+    518b. warmup-зависимость: 401 → один warmup-повтор; **403 → без повторов**, `FAILURE` + сообщение пользователю + alert; [ВЛ] ПРОТ-11;
     518c. HTTP-коды и timeout → правильные PrincipalResult;
     518d. `resolveStations` ошибка «станция не найдена» → `CLARIFICATION_REQUIRED`-маркер (по коду, в attributes).
 519. Написать юнит-тесты `BzdGatewayTest` с MockWebServer (warmup, 403, пустой результат, таймаут).
@@ -586,15 +608,15 @@
 535. Отключение/включение источника на гейтвее: состояние читается из `SourceStateRepository` (фаза 3).
 536. Внедрить check: `if (!state.enabled || state.draining) return SKIPPED`.
 537. Написать тест гейтвея: выключенный источник → SKIPPED без сетевого вызова.
-538. Интеграция circuit: гейтвей вызывает `CircuitRegistry.get(key).isOpen()` перед вызовом.
-539. Написать тест: OPEN circuit → SKIPPED, без сети (MockWebServer не получает запрос).
+538. ~~Интеграция circuit: гейтвей вызывает `CircuitRegistry.get(key).isOpen()`~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-020: быстрый сбой только по `source_state` (шаг 536).
+539. ~~Тест: OPEN circuit → SKIPPED~~ — **[ОТМЕНЕНО]** вместе с 538.
 540. Купить гарантию: гейтвей никогда не бросает исключение (кроме восстановленных сценариев запроса).
 541. Написать тест-свойство: любой метод гейтвея с любым исключением клиента → PrincipalResult (не throw).
 542. Проверить N+1/дубли: suggest и search внутри одного гейтвея не дублируют warmup.
 543. Создать `GatewayRegistry` (список гейтвеев, keyed by sourceId).
 544. Написать тест registry: ровно 5 гейтвеев, уникальные id.
-545. Ввести приоритеты: atlas=10, ticketbus=20 (порядок для combiner default).
-546. Создать `ParallelSourceExecutor`-интерфейс (реализация — фаза 8), гейтвеи остаются «чистыми».
+545. Порядок источников для combiner — по факту завершения ответа (все равны), без приоритетов. [ВЛ] ПРОТ-05
+546. Создать `ParallelSourceExecutor`-интерфейс (реализация — фаза 9), гейтвеи остаются «чистыми».
 547. Написать тест изоляции: падение bzd не влияет на atlas-результат (уже через PrincipalResult).
 548. Прогнать live-интеграции (exclude-теги) локально — фиксируем актуальные ответы.
 549. [ПРОВ] Сравнить актуальные JSON-ответы источников с фикстурами — возможно обновление мапперов.
@@ -604,16 +626,18 @@
 553. Реализовать `prepare()` в BzdGateway и TicketBusGateway (обёртка существующих warmup).
 554. Написать тест prepare: повторный вызов идемпотентен.
 555. [МЕТ] Метрика `source.result{source,status}` — для каждого PrincipalResult.
-556. [МЕТ] Метрика `source.latency{source}_ms`.
+556. [МЕТ] Метрика `source.latency_ms{source}` (единые имена — ПРОТ-20).
 557. Написать тест метрик: состояниеPrincipalResult инкрементирует счётчик.
-558. [АЛЕРТ] `source.failures{source} >= 5/30s` — trigger circuit (заготовка логики, фаза 8).
+558. [АЛЕРТ] `source.errors{source}` — N ошибок подряд (окно в конфиге) → **только алерт в лог WARN**, источник отключается вручную флагом. [ВЛ] ADR-020
 559. Обновить `docs/19–20` в части числа кодов на уровне клиента (не менять смысл).
 560. Коммит «ADD: гейтвеи источников + PrincipalResult + suggest».
 561. `[✓]` Фаза 7 готова.
 
-## ФАЗА 8. Circuit breaker (561–660)
+## ФАЗА 8. ~~Circuit breaker (561–660)~~ — [ОТМЕНЕНО] решением владельца
 
-561. Создать `circuit/CircuitState` enum, `CircuitKey` (source:endpoint), `CircuitPolicy`.
+> **[ВЛ] ПРОТ-08/09/В-8: circuit breaker на MVP не делаем.** Вместо него: per-source таймауты, alert по счётчику ошибок (`source.errors`, шаг 558), ручной флаг `source_state.enabled` с `X-Api-Key` (ADR-020). Пункты 561–610 ниже сохраняются как справочный материал для будущей задачи «circuit breaker»: снятые решения владельца — TTL 60 с (макс. 5 мин) и сброс при ручном включении.
+
+561. ~~Создать `circuit/CircuitState` enum, `CircuitKey` (source:endpoint), `CircuitPolicy`~~ — отложено.
 562. `CircuitPolicy` свойства: failureThreshold=5, windowMs=30000, openTimeoutMs=60000, maxOpenMs=300000, halfOpenPermits=1.
 563. `CircuitBreaker` класс: методы `recordSuccess(), recordFailure()`, `isOpen()`, `state()`.
 564. Реализовать скользящее окно: кольцевой буфер отметок времени ошибок (не int-счётчик с reset).
@@ -662,7 +686,7 @@
 607. Обновить `docs/22_spec_errors.md` — раздел circuit с фактическими параметрами.
 608. Прогнать юнит-тесты и интеграционные на H2.
 609. Коммит «ADD: circuit breaker + registry + persistence + state machine».
-610. `[✓]` Фаза 8 готова.
+610. ~~`[✓]` Фаза 8 готова~~ — [ОТМЕНЕНО].
 
 ## ФАЗА 9. Параллельный исполнитель и сборка (611–720)
 
@@ -672,20 +696,20 @@
 614. Внутренняя модель `CallFuture` (future + key + gateway).
 615. Реализовать fan-out: каждый SourceCall на виртуальном потоке (`Thread.startVirtualThread`).
 616. Пробросить MDC requestId в дочерние потоки (шаг 56).
-617. Реализовать fan-in: `CompletableFuture.allOf` + `get(deadline)`.
-618. Deadline-модель: `deadline = min(request.deadlineMs, budget)`; budget=90% от запроса.
-619. По истечении: `future.cancel(true)` незавершённые → PrincipalResult(TIMEOUT).
-620. Написать тест: медленный источник > deadline → TIMEOUT результат, быстрый — OK.
-621. Написать тест: отменённая задача не оставляет висящих сетевых вызовов (MockWebServer между запросами).
-622. Гарантия порядка: результаты сортируются по `priority()` гейтвея.
+617. Реализовать fan-in: `CompletableFuture.allOf` + `join()` — **ждём ВСЕ источники**, без общего обрыва. [ВЛ] ПРОТ-01
+618. ~~Deadline-модель: `deadline = min(request.deadlineMs, budget)`~~ — **[ОТМЕНЕНО]** [ВЛ]: общего дедлайна нет; `deadlineMs` — advisory (лог/метрика), таймауты только per-source.
+619. ~~По истечении `future.cancel(true)` → TIMEOUT~~ — **[ОТМЕНЕНО]** вместе с 618; TIMEOUT приходит из per-source таймаута клиента.
+620. Написать тест: медленный источник (per-source timeout) → TIMEOUT, быстрый — OK; fan-in ждёт обоих.
+621. ~~Тест: отменённая задача не оставляет висящих вызовов~~ — **[ОТМЕНЕНО]** вместе с 618.
+622. Гарантия порядка: результаты возвращаются в порядке завершения; приоритетов нет (FIFO на входе). [ВЛ] ПРОТ-05
 623. Написать тест порядка.
-624. Внедрить pre-checks: `enabled`/`circuit`/`draining` → SKIPPED до потока.
+624. Внедрить pre-checks: `enabled`/`draining` → SKIPPED до потока. ~~`circuit`~~ — [ВЛ] не делаем.
 625. Написать тест: disabled → SKIPPED, поток не создан (counter assert).
 626. Обработка пустого набора задач: вернуть empty быстро.
 627. Написать тест пустого вызова.
-628. Sleep на `deadline` не нужен — только future-таймаут (без активного ожидания).
-629. Написать тест: не блокируем поток-вызыватель больше deadline+slack.
-630. Внедрить защиту «не отменяем преждевременно»: graceSlack=500ms после deadline для финализации.
+628. ~~Sleep на `deadline`~~ — **[ОТМЕНЕНО]** вместе с 618; ждём реальные таймауты источников.
+629. ~~Тест: не блокируем вызывающий поток больше deadline+slack~~ — переформулировать: fan-in возвращается, когда завершились все источники (или их таймауты).
+630. ~~Защита «не отменяем преждевременно» (graceSlack)~~ — **[ОТМЕНЕНО]** вместе с 618.
 631. Написать тест slack.
 632. Включить `InterruptedException` поведения: при shutdown — отмена, лог.
 633. Написать тест shutdown.
@@ -699,13 +723,13 @@
 641. Создать `PipelineContext` (intent, requestContext, session).
 642. Первый контур orchestration: «пустой набор инструментов» — вернуть пустой ответ.
 643. Написать тест пустого orchestration.
-644. Реализовать выделение инструментов по доменам intent (BUS→SearchBusesTool и т.д.).
+644. ~~Реализовать выделение инструментов по доменам intent~~ — [ВЛ] **инструменты выбирает LLM** (агентный цикл, ADR-019); фиксированного маппинга по доменам нет, остаётся только проверка аргументов инструмента.
 645. Написать тест выбора инструментов.
 646. Параллельная логика мультидомена: инструменты тоже параллельны (каждый складывает свои source-calls).
 647. Центральный `RunPlan`: список job'ов (tool+query+domains) для fan-out высокого уровня.
 648. Написать тест планирования (2 домена → 2 инструмента).
-649. Установить total deadline = request.deadlineMs; инструменты получают подбюджет (разделение).
-650. Продумать время ответа: если deadline исчерпан — вернуть partial-ответ с warning «результаты неполные».
+649. ~~Установить total deadline и подбюджеты инструментов~~ — **[ОТМЕНЕНО]** [ВЛ] ПРОТ-01/02.
+650. Если источник не ответил вовсе (сеть) — partial-ответ с warning о нём; partial по дедлайну больше не бывает.
 651. Написать тест частичного ответа по глобальному deadline.
 652. `ResultCollector` агрегирует по доменам и «источники › домены» структуру.
 653. Написать тест агрегации.
@@ -787,10 +811,10 @@
 
 ## ФАЗА 12. LLM-гейт и агент (723–820)
 
-723. Создать `llm/LlmGateway` интерфейс: `LlmResponse complete(LlmRequest)`.
-724. `LlmRequest`: systemPrompt, userText, schemaHint (JSON), timeoutMs.
-725. `LlmResponse`: text, usage, ms, raw; надёж: failure-маркер.
-726. `LlmProperties`: provider, apiKey(ref env), baseUrl, model, timeoutMs, retry.
+723. Создать `llm/LlmGateway` интерфейс: `LlmResponse complete(LlmRequest)`; **agentic-режим**: `List<ToolCall> nextTools(...)` + `complete(...)`. [ВЛ] ADR-019
+724. `LlmRequest`: systemPrompt, **история диалога (≤20 сообщений)**, список инструментов, timeoutMs. ~~schemaHint (JSON)~~ — [ВЛ] упрощено.
+725. `LlmResponse`: text, toolCalls, usage, ms, raw; надёж: failure-маркер.
+726. `LlmProperties`: **OpenRouter** (`baseUrl=https://openrouter.ai/api/v1`), `apiKey(ref env OPENROUTER_API_KEY)`, `model` (env `OPENROUTER_MODEL`), `timeoutMs=30000`, `contextWindow=20`, `maxToolRounds=2`. [ВЛ]
 727. Реализация-заглушка `LlmGatewayStub` (детерминированно возвращает фикстуры) — для тестов/дев.
 728. Создать `agent/Extractor`: промпт→(SearchIntent JSON).
 729. Построить JSON-схему `SearchIntent` (domains, from/to, dates, pax, roundTrip, prefs, sources).
@@ -801,32 +825,36 @@
 734. `Extractor` с fallback: если LLM недоступен — `RuleBasedFallback`.
 735. `RuleBasedFallback` — regex-парсер (домен, города, даты) из каталога токенов.
 736. Написать тесты fallback: простые и средние промпты.
-737. Интеграция circuit key `llm` (фаза 8).
-738. Тест: LLM 5×429 → fallback, пользователь не ждёт.
+737. ~~Интеграция circuit key `llm`~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-020.
+738. Тест: LLM недоступен/таймаут → fallback (текст из офферов), пользователь не ждёт 500.
 739. `Clarifier`: построение вопроса пользователю по недостающим полям.
 740. Clarifier-сценарии: город не найден (АНП-74), станции-уточнение (АНП-94), даты, где именно (АНП-168).
 741. Написать тесты Clarifier (5 сообщений из каталога сообщений).
-742. `Refiner`: ввод refine-правил (фильтры/домены/сортировка/forceSource) → новый intent (мержится в session).
-743. Реализовать merge-логику без дублей и противоречий.
-744. Написать тесты Refiner (противоречивые интенты разрешаются: последний приоритет).
+742. `Refiner`: **отдельного refine-API нет** — уточнения приходят обычными репликами в чат, LLM сам решает, какие инструменты вызвать. [ВЛ] ADR-018/019
+743. ~~Реализовать merge-логику refine без дублей~~ — [ВЛ] не делаем (контекст = история диалога).
+744. ~~Тест Refiner~~ — [ВЛ] не делаем.
 745. `Summarizer`: задание LLM — резюме по offers+intent (без галлюцинаций, топ-факты).
 746. Реализовать prompt-шаблоны в `resources/prompts/*.md`.
 747. Тест Summarizer: на фикстуре offers → краткое резюме (snapshot-тест).
 748. Guard пост-валидации (из доков): проверка резюме на факты (даты/цены из offers).
 749. Тест Guard: резюме утверждает цену, которой нет — фолбэк «повторное резюме» или правка.
-750. Ввод значения в `SearchResponse.summary` + fallback: если LLM не справился — шаблон.
-751. Связать LLM-гейт и circuit breaker (метрики 429).
+750. ~~Ввод значения в `SearchResponse.summary`~~ — [ВЛ] ответ агента — **текст** (`text/plain`), без DTO.
+751. ~~Связать LLM-гейт и circuit breaker~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-020.
 752. Написать тест: LLM timeout → LLM_UNAVAILABLE сообщение, не 500.
 753. ADR-052: при недоступном LLM — rule-based, функциональность урезанная, сервис жив.
 754. Покрыть сценарий смерти LLM посреди запроса (extract ok, summary fail) — summary повторно через fallback.
-755. Union intent «forceSource» — прокидывается в tools (АНП-93).
-756. Тест: forceSource=bzd → Filter передаёт в BzdTool, остальные пропущены.
+755. ~~Union intent «forceSource»~~ — [ВЛ] не делаем (источник выбирает LLM).
+756. ~~Тест forceSource~~ — [ВЛ] не делаем.
 757. `LlmGateway` интерфейс — смена провайдера без изменения кода (ADR).
 758. Документировать API LLM (контракт JSON) в `docs/llm-contract.md`.
 759. Написать integration-тест со стубом/моком для полного цикла агент.
 760. Залогировать промпты/резюме (без секретов) в `request_log.intentJson` / summary-файл.
 761. Тест: промпты не содержат API-ключей.
-762. Коммит «ADD: LLM-гейт, извлечение интента, кларификация, рефайн, резюме».
+762. Коммит «ADD: LLM-гейт (OpenRouter, function calling), агентный цикл, кларификация».
+762.1. [ВЛ] Реализовать **агентный цикл**: LLM возвращает `tool_calls` → `ParallelSourceExecutor` выполняет их параллельно и **ждёт все** → результаты (`{status, offers|error}`) возвращаются в LLM → повтор до `maxToolRounds` → финальный текст (ADR-019).
+762.2. [ВЛ] Инструменты-LLM: по одному на источник (`search_atlasbus`, `search_ticketbus`, `search_bzd`, `search_ticketpro`, `search_belhotel`) + `get_offers`; лимит 1 вызов на источник за раунд; лимит раундов — из настроек агента (`AgentProperties.llm.maxToolRounds=2`).
+762.3. [ВЛ] Fallback-решатель (пока нет ключа OpenRouter): тот же цикл, выбор источников по контексту/флагам, финальный текст собирается из офферов по шаблону.
+762.4. [ВЛ] Тест агентного цикла (на моке LLM): 2 раунда, tool-результаты с ошибкой источника, упавший источник упомянут в тексте.
 763. `[✓]` Фаза 12 готова.
 
 ## ФАЗА 13. Оркестрация и Web API (764–850)
@@ -835,12 +863,12 @@
 765. Написать сквозной тест happy (фикстура → интегрировано) без LLM (fallback).
 766. `RefineOrchestrator` — refine-контур (базовый session + новый intent merge + новый ответ).
 767. Написать тест refine (замена интента, тот же sessionId).
-768. `web/AgentController`: POST /agent/search, /agent/refine, GET /agent/sessions/{id}.
+768. `web/AgentController`: **`POST /api/v1/agent/chat`** (`sessionId?`, `text`) → **`text/plain`** со строкой ответа. ~~`/agent/search`, `/agent/refine`~~ — [ВЛ] У-1/В-7: один чат-эндпоинт, отдельного refine нет.
 769. Маппер DTO: SearchRequest(web) → PipelineContext.
 770. Валидация через `@Valid` (jakarta).
-771. Возврат SearchResponse (200) или ErrorResponse (по advice).
-772. Написать тест контроллера (MockMvc): happy JSON.
-773. `SourcesAdminController`: GET /sources, POST /sources/{name}/enable|disable.
+771. Возврат: 200 + `text/plain` (строка ответа агента) либо текст ошибки через advice. ~~SearchResponse/ErrorResponse~~ — [ВЛ] У-1.
+772. Написать тест контроллера (MockMvc): happy → 200 `text/plain` с текстом.
+773. `SourcesAdminController`: GET /sources, POST /sources/{name}/enable|disable — **за `X-Api-Key`** (ADR-026).
 774. Реализовать включение с ramp-up: после enable — первый период 10% трафика (АНП-103).
 775. Реализовать `RampUpGate` (window 30 сек).
 776. Написать тест ramp-up.
@@ -881,23 +909,24 @@
 808. `put` при полной очереди → `queue.reject=true` на период.
 809. `take` из consumer-потоков (4–8) → `SearchOrchestrator`.
 810. Написать тест: очередь полна → QUEUE_REJECTED (503).
-811. Aging: на каждом `poll` увеличивать приоритет старых задач.
-812. Тест aging.
-813. Дедупликация в очереди по requestId (Map-монитор).
+811. ~~Aging: увеличивать приоритет старых задач~~ — **[ОТМЕНЕНО]** [ВЛ] ПРОТ-05: FIFO без приоритетов и старения.
+812. ~~Тест aging~~ — **[ОТМЕНЕНО]** вместе с 811.
+813. Дедупликация в очереди по requestId (Map-монитор) — оставляем (защита от двойного клика, порядок FIFO не меняет).
 814. Тест: два идентичных requestId в очереди — второй игнорируется.
 815. Backpressure: как `queue.reject` отключает приём (модель флага).
 816. [МЕТ] Метрики `queue.length`, `queue.max`, `queue.rejected`.
 817. Housekeeper-интеграция: consumer-пулы не конфликтуют с housekeeper.
 818. `session/SessionStore` поверх `SessionRepository`:
    - get/put/update/touch/delete.
-819. `Session` domain: id, intent, steps, createdAt, lastAccessAt, ttl.
+819. `Session` domain: id, **messages (список реплик)**, createdAt, lastAccessAt, **ttl=15 мин**; `state ∈ {NEW, ACTIVE, EXPIRED}` (без `CANCELLED`). [ВЛ] ADR-018
 820. `SessionRepository`-реализация (фаза 3) → `SessionStore`.
-821. Реализовать `touch()` — продлевает TTL; `expire()` вызывается при обращении если просрочен.
-822. Тест: истекшая сессия → SESSION_EXPIRED.
-823. `SessionHousekeeper` (scheduler): каждую минуту находит expired → delete batch (1000).
+821. Реализовать `touch()` — продлевает TTL (15 мин с последнего обращения); `expire()` при обращении, если просрочен.
+822. Тест: истекшая сессия (старше 15 мин) → SESSION_EXPIRED.
+823. `SessionHousekeeper` (scheduler): каждую минуту находит expired → delete batch (1000) (каскадом удаляет `session_message`).
 824. Тест housekeeper-чистки.
-825. Refine-блокировка: `SELECT ... FOR UPDATE` при refine (фаза 3, шаг 255) через `LockedSessionGate`.
-826. Тест параллельного refine.
+825. Refine-блокировка `SELECT ... FOR UPDATE` — [ВЛ] не делаем (отмены/параллельного refine нет).
+826. ~~Тест параллельного refine~~ — [ВЛ] не делаем.
+826.1. [ВЛ] `SessionMessageRepository`: `append` (user/agent), `findLast(sessionId, limit=20)` для контекста LLM, `findAll` для отладки. Тест: порядок и лимит 20.
 827. `cache/CacheManager` поверх `CacheRepository`:
    - get/put/putIfAbsent/delete, TTL, stale.
 828. Ключи кэша: `sourceId:endpoint:normParams`.
@@ -905,13 +934,13 @@
 830. Тест: race двух потоков — без дублей.
 831. `CacheRefreshScheduler`: раз в 5 мин обновляет suggest-справочники (города) в кэше.
 832. Тест update справочников.
-833. Кэширование результатов: TTL 5 мин → stale-возврат при OPEN (АНП-95).
+833. Кэширование результатов: TTL 5 мин; stale-возврат — только вместе с предупреждением пользователю. ~~при OPEN~~ — [ВЛ] OPEN не бывает (ADR-020).
 834. Тест stale.
 835. `WarmupScheduler`: при старте + повтор 5 мин — `prepare()` для Bzd/TicketBus.
 836. При ошибке warmup — повтор через 30 сек (не падает приложение).
 837. Тест: warmup retry.
-838. `CircuitScheduler`: раз 5 сек — переходы OPEN→HALF_OPEN по прошествии TTL; синхронизация с БД.
-839. Тест синхронизации.
+838. ~~`CircuitScheduler`: переходы OPEN→HALF_OPEN~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-020.
+839. ~~Тест синхронизации circuit~~ — **[ОТМЕНЕНО]** вместе с 838.
 840. `QueueMonitor`-scheduler: метрики очереди, флаг reject.
 841. Настройка таймингов в `application.properties` (React cron ex `0/5 * * ? * *`).
 842. Пул планировщика: 2 потока (именованные), изоляция джобов separate `@Scheduled` группы.
@@ -932,11 +961,11 @@
 854. Реализовать `CounterRegistry` (ConcurrentHashMap<String, LongAdder>).
 855. `HistogramRegistry` (bucket'ы: 0-100ms,100-500,500-1s,>1s).
 856. Тесты регистров.
-857. Собрать метрики: http, db (фаза 3–4), source (фаза 7), circuit (8), tool (10), llm (12), queue (14).
-858. Экспорт: /actuator/prometheus (формат Prometheus).
-859. Тест prometheus-выражений.
+857. Собрать метрики: http, db (фаза 3–4), source (фаза 7), tool (10), llm (12), queue (14). ~~circuit (8)~~ — [ВЛ] не делаем. Имена — по единому словарю `25_contradictions.md` (ПРОТ-20).
+858. ~~Экспорт /actuator/prometheus~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-022: счётчики в памяти + лог, без actuator/prometheus.
+859. ~~Тест prometheus-выражений~~ — **[ОТМЕНЕНО]** вместе с 858.
 860. `AlertEvaluator` — локальные пороги, вызываемые из метрик-записей.
-861. Пороги: parse.errors>10/мин (АЛЕРТ формат), source.errors>5/30s, queue.length>90%, db errors>5/min, INTERNAL_ERROR>0.
+861. Пороги: parse.errors>10/мин, source.errors>N/мин (порог в конфиге), queue.length>90%, db errors>5/min, INTERNAL_ERROR>0.
 862. Режимы реакции: log WARN/ERROR + вебхук-заглушка (интерфейс `AlertSink`).
 863. Реализовать два AlertSink: `LogAlertSink`, `NoopAlertSink`.
 864. Написать тесты срабатываний.
@@ -947,7 +976,7 @@
 869. `logback-spring.xml` с профилями dev/prod.
 870. Проверка «нет секретов в логах» — фильтр/маска (apiKey).
 871. Тест маскирования логов.
-872. /actuator/metrics и /prometheus — права (роли admin) в prod.
+872. ~~/actuator/metrics и /prometheus — роли admin~~ — [ВЛ] эндпоинтов нет; диагностика/источники закрываем `X-Api-Key` (ADR-026).
 873. Тест прав доступа.
 874. Request-id во всех лог-файлах (проверка).
 875. Алерты фиксированны в `docs/alerts.md` таблица.
@@ -1018,7 +1047,7 @@
 931. Документировать runbook (старт, остановка, диагностика).
 932. Как смотреть логи/метрики (docs/ops.md).
 933. Как перевключить источник вручную (db update source_state).
-934. Как сбросить circuit вручную.
+934. ~~Как сбросить circuit вручную~~ — [ВЛ] circuit нет; вместо этого — как включить/выключить источник флагом (админ, `X-Api-Key`).
 935. Как почистить очередь.
 936. Как восстановить после crashed-housekeeper (идемпотентность).
 937. Как обновить Константы (домены/UA/токены) — процедура.
@@ -1044,12 +1073,12 @@
 
 ## Приложение A. Сводный чек-лист (порядок проверки перед релизом)
 
-- [ ] АДР 1–52 существуют и обоснованы
+- [ ] АДР 1–30 существуют и обоснованы (по `25_contradictions.md`, раздел 40.1)
 - [ ] БД: миграции V1–V16 применяются, индексы есть, hot-queries оптимизированы (EXPLAIN)
 - [ ] Исключения: каталог 1–235 маппится в ErrorCode → HTTP → i18n
 - [ ] Изоляция: ни один источник не роняет сессию (гарантированный PrincipalResult)
-- [ ] Circuit: threshold/окна, АНП-89…100 реализованы и протестированы
-- [ ] Параллельность: deadline-модель, отмена, порядок, MDC
+- [ ] ~~Circuit: threshold/окна, АНП-89…100~~ — [ВЛ] circuit не делаем; вместо этого: `source.errors` + alert + ручной флаг `enabled`
+- [ ] Параллельность: await-all без дедлайна, FIFO-порядок, MDC (отмены нет — [ВЛ] У-7)
 - [ ] Инструменты и combiner/ranker работают (happy 1–80)
 - [ ] LLM fallback: rule-based работает при недоступности LLM
 - [ ] Метрики/алерты на каждой ошибке, логи с request-id
@@ -1059,14 +1088,14 @@
 
 | # ошибки | Источник | Фаза | Класс | ErrorCode | Тест |
 |---|---|---|---|---|---|
-| 1–15 | Общие HTTP | 5,7,8 | ClientException / гейтвеи | SOURCE_UNAVAILABLE и др. | At<source>GatewayTest |
-| 16–36 | Сетевые | 5,7,8 | ClientException(timeout) | SOURCE_TIMEOUT | ... |
+| 1–15 | Общие HTTP | 5,7 | ClientException / гейтвеи | SOURCE_UNAVAILABLE и др. | At<source>GatewayTest |
+| 16–36 | Сетевые | 5,7 | ClientException(timeout) | SOURCE_TIMEOUT | ... |
 | 37–70 | Контент | 6 | OfferNormalizer/ParseException | SOURCE_PARSE_ERROR | MappingTests |
-| 71–86 | Atlas | 6,7,8 | AtlasSseParser→Gateway | — | AtlasGatewayTest |
-| 87–120 | BZD | 6,7,8 | BzdGateway+warmup | SOURCE_AUTHORIZATION | BzdGatewayTest |
-| 121–150 | TicketBus | 6,7,8 | TicketBusGateway | — | TicketBusGatewayTest |
-| 151–170 | TicketPro | 6,7,8 | TicketProGateway | — | Test |
-| 171–200 | BelHotel | 6,7,8 | BelHotelGateway | — | Test |
+| 71–86 | Atlas | 6,7 | AtlasSseParser→Gateway | — | AtlasGatewayTest |
+| 87–120 | BZD | 6,7 | BzdGateway+warmup | SOURCE_AUTHORIZATION | BzdGatewayTest |
+| 121–150 | TicketBus | 6,7 | TicketBusGateway | — | TicketBusGatewayTest |
+| 151–170 | TicketPro | 6,7 | TicketProGateway | — | Test |
+| 171–200 | BelHotel | 6,7 | BelHotelGateway | — | Test |
 | 201–220 | Юридические | 13,17 | SourcesAdmin | — | E2E |
 | 221–235 | РБ/РФ | 6,13 | Local/Normalizer | — | E2E |
 
@@ -1080,19 +1109,18 @@
 959. Advice-тест `GlobalExceptionHandlerTest`: все коды → корректные HTTP и тело.
 960. Юнит `RequestIdFilterTest`: генерация, проброс в MDC, парсинг заголовка.
 961. Интеграционный `RequestIdFlowTest`: контроллер → advice → лог содержит один и тот же requestId.
-962. Юнит `CircuitBreakerWindowTest`: 4 ошибки CLOSED, 5-я OPEN, окно 30 сек.
-963. Юнит `CircuitTransitionTest`: OPEN→(TTL)→HALF_OPEN→(успех)→CLOSED.
-964. Юнит `CircuitRetryTest`: 3 внутренних retry = 1 ошибка (АНП-98).
-965. Юнит `CircuitEndpointIsolationTest`: atlas:stream OPEN не влияет на atlas:suggest.
-966. Юнит `CircuitForceProbeTest`: forceSource пропускает пробный при OPEN (АНП-93).
-967. Юнит `CircuitMaxOpenTest`: принудительный HALF_OPEN через 5 мин (АНП-96).
-968. Интеграционный `CircuitCacheStaleTest`: OPEN + свежий кэш → результат со stale=true (АНП-95).
-969. Интеграционный `CircuitPersistenceTest`: состояние восстанавливается из БД после рестарта.
+962. ~~Юнит `CircuitBreakerWindowTest`~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-020.
+963. ~~Юнит `CircuitTransitionTest`~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-020.
+964. Юнит `SourceErrorCountTest`: 3 внутренних retry = **1** ошибка в `source.errors` (АНП-98, ПРОТ-10). Оставляем — правило счёта ошибок нужно даже без breaker.
+965. ~~Юнит `CircuitEndpointIsolationTest`~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-020.
+966. ~~Юнит `CircuitForceProbeTest`~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-020.
+967. ~~Юнит `CircuitMaxOpenTest`~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-020.
+968. ~~Интеграционный `CircuitCacheStaleTest`~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-020.
+969. ~~Интеграционный `CircuitPersistenceTest`~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-020.
 970. Юнит `ParallelExecutorFanOutTest`: N задач → N виртуальных потоков.
-971. Юнит `ParallelFactorDeadlineTest`: медленный источник → TIMEOUT результат к deadline.
-972. Юнит `ParallelFactorCancelTest`: отменённый будущий вызов не оставляет висящий сетевой запрос.
-973. Юнит `ParallelFactorOrderTest`: результаты упорядочены по priority гейтвея.
-974. Юнит `ParallelFactorSkipTest`: disabled/circuit → SKIPPED, поток не создаётся.
+971. ~~Юнит `ParallelFactorDeadlineTest`: TIMEOUT к deadline~~ — [ВЛ] переименовать: TIMEOUT из per-source таймаута, fan-in ждёт все.
+973. ~~Юнит `ParallelFactorOrderTest`: порядок по priority~~ — [ВЛ] порядок по завершению, приоритетов нет.
+974. Юнит `ParallelFactorSkipTest`: disabled → SKIPPED, поток не создаётся. ~~circuit~~ — [ВЛ] не делаем.
 975. Интеграционный `ParallelFactorMDCTest`: requestId виден в дочернем потоке.
 976. Юнит `AtlasGatewayHttpTest`: MockWebServer для 500/502/503/429/403/401/404/504 и timeouts.
 977. Юнит `AtlasGatewaySseTest`: события progress/rides/done/error/unknown/broken-json/duplicate.
@@ -1145,10 +1173,10 @@
 1024. Интеграционный `SourcesAdminTest`: disable → drain, enable → ramp-up.
 1025. Интеграционный `QueueRejectTest`: переполнение → 503 QUEUE_REJECTED.
 1026. Интеграционный `SessionExpiredTest`: истёкшая сессия → SESSION_EXPIRED.
-1027. Сквозной `E2eHappyBusTest`: «Автобус Минск-Брест» (фикстуры) → 200 с offers.
-1028. Сквозной `E2eUnhappySourceTest`: источник 500 → partial ответ, сервис жив.
-1029. Сквозной `E2eAllDownTest`: все источники OPEN → ALL_SOURCES_UNAVAILABLE.
-1030. Сквозной `E2eQueueTest`: Мейн-путь с очередью → корректный ответ.
+1027. Сквозной `E2eHappyBusTest`: «Автобус Минск-Брест» (фикстуры) → 200, текстовый ответ.
+1028. Сквозной `E2eUnhappySourceTest`: источник 500 → текст с упоминанием упавшего источника, сервис жив (без breaker).
+1029. Сквозной `E2eAllDownTest`: все источники FAILURE → текст «источники недоступны». ~~OPEN~~ — [ВЛ] circuit нет.
+1030. Сквозной `E2eQueueTest`: Мейн-путь с очередью → текстовый ответ.
 
 ---
 
@@ -1157,7 +1185,7 @@
 1031. Фазы 0–2 (каркас+БД) — «инфраструктурный» merge.
 1032. Фазы 3–4 (схема+оптимизация) — «schema» merge.
 1033. Фазы 5–6 (исключения+модель) — «core» merge.
-1034. Фазы 7–8 (гейтвеи+circuit) — «sources» merge.
+1034. Фаза 7 (гейтвеи) — «sources» merge. ~~Фазы 7–8 (гейтвеи+circuit)~~ — [ВЛ] circuit отменён.
 1035. Фазы 9–10 (параллельность+tools) — «orchestration» merge.
 1036. Фазы 11–12 (combiner+LLM) — «agent» merge.
 1037. Фазы 13–14 (web+очередь) — «api» merge.
@@ -1165,4 +1193,4 @@
 1039. Фазы 17–18 (E2E+эксплуатация) — «release» merge.
 1040. Каждый merge: ADR записан, тесты зелёные, каталог ошибок покрыт.
 
-Конец плана. Расчёт: **1040 шагов** (твёрдо больше 1000); при необходимости любая фаза расширяется под-шагами уровня «метод → тест».
+Конец плана. Расчёт: **~1030 шагов**, из них часть помечена `[ОТМЕНЕНО]` по решениям владельца (`25_contradictions.md`); при необходимости любая фаза расширяется под-шагами уровня «метод → тест».
