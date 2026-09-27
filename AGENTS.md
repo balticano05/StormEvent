@@ -5,6 +5,7 @@
 - **Commit messages must be in English only.** No Russian/Cyrillic text in the subject or body.
 - Keep the existing prefix style: `ADD: `, `FIX: `, `DOC: `, `REFACTOR: `, `CHORE: `.
 - Subject line is imperative, short, and describes what changed — not the process.
+- **Never commit `.env`, `*.env`, `.env.*` files** — they are in `.gitignore`. Secrets (DB passwords, API keys, admin keys) must stay local.
 
 ## Docs
 
