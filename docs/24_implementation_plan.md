@@ -37,8 +37,8 @@
 14. Решение АДР-007: **схема пакетов** — по блюпринту 23 (gateway/normalize/orchestration/agent/cache/session/queue/scheduler/exception/web/handler/metrics; **circuit — исключить**, [ВЛ] ПРОТ-08/09). [ВЛ] ADR-VL-15: пакет `queue` тоже исключить.
 15. ~~Решение АДР-008: **HTTP-клиенты** — базовый `OkHttpClient` + `newBuilder()`-производные; отдельный клиент/пул для SSE; **несколько клиентов разрешены** ради параллелизма.~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-VL-15: **один** `OkHttpClient` на всё приложение, один набор таймаутов, SSE-пула нет (ПРОТ-03).
 16. ~~Решение АДР-009: **виртуальные потоки** для fan-out к источникам (Java 21 virtual threads), без executor-пулов на источник.~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-VL-15: fan-out последовательный, в потоке HTTP-запроса; виртуальных потоков и executor-пулов нет.
-17. ~~Решение АДР-010: deadline-модель (default 15000, бюджет 90 %)~~ **[ОТМЕНЕНО]** [ВЛ] ПРОТ-01/02: общего обрыва нет — **ждём выполнения всех** источников; `deadlineMs` — advisory; таймауты общего клиента (ADR-VL-15); LLM — агентный цикл (шаг 40.1).
-18. Решение АДР-011: **request-id** генерируется на входе, пробивается через MDC и таблицы.
+17. ~~Решение АДР-010: deadline-модель (default 15000, бюджет 90 %)~~ **[ОТМЕНЕНО]** [ВЛ] ПРОТ-01/02: общего обрыва нет — **ждём выполнения всех** источников; `deadlineMs` — advisory; таймауты общего клиента (ADR-VL-15); LLM — агентный цикл (шаг 40.1). **[ВЛ] ADR-VL-16**: бюджет времени вернулся в другой форме — 40 с мягко / 60 с потолок с 504, **без** `cancel()`; прежняя модель (90 %, `future.cancel(true)`) не действует.
+18. Решение АДР-011: **request-id** генерируется на входе, пробивается через MDC и таблицы. Детали механизма (валидация заголовка, очистка MDC в `finally`, идемпотентность **не** в фильтре) — в шагах 43–44 и §7.4 блюприта `23`.
 19. [✓] [ПРОВ] LLM-провайдер → **закрыто**: реальный LLM, **OpenRouter** (function calling), ключ будет позже; до ключа — fallback (У-4, В-9/В-14).
 20. Решение АДР-012: LLM — за интерфейсом `LlmGateway`; провайдер — OpenRouter, конфиг из env `OPENROUTER_API_KEY`/`OPENROUTER_MODEL`. [ВЛ]
 21. [✓] [ПРОВ] Домены МВП → **закрыто**: **все источники, у которых есть API** (`atlasbus`, `ticketbus`, `bzd`, `ticketpro`, `belhotel`). [ВЛ] У-5.
@@ -77,6 +77,7 @@
 40.11. [ВЛ] **ADR-VL-11 (анти-бот)**: обход не делаем — уважаем `robots.txt`, при анти-боте сообщение пользователю + alert, источник отключается вручную (ПРОТ-27).
 40.12. ~~[ВЛ] **ADR-VL-12 (очередь приоритетов в доках)**: `13:25-26`, `13:73`, `15:36-38`, `23:484-487` — помечаются устаревшими (АНП-83 не применима).~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-VL-15: очереди нет → разделы про очередь в `13`, `15`, `23` помечаются отменёнными **целиком** (АНП-76, АНП-83, АНП-86, АНП-88 и прочие).
 40.16. [ВЛ] **ADR-VL-15 (синхронное выполнение)**: один `OkHttpClient`; источники дёргаются последовательно в потоке HTTP-запроса; без `RequestQueue`/воркеров/backpressure, без виртуальных потоков и executor-пулов. Заменяет ADR-006, ADR-008, ADR-009, ADR-VL-05; `request_log` и `idempotency` остаются. Карточка — [`decisions.md`](decisions.md#adr-vl-15).
+40.17. [ВЛ] **ADR-VL-16 (бюджет времени запроса)**: «суммарно не должно превышать 40 секунд, запросы как успеют, оставшееся время — на нейронку»; жёсткий потолок — **60 с**, не успели → **`REQUEST_TIMEOUT`/504** даже при собранных офферах. Реализация: `TimeoutProperties` (`storm.timeout.*` 40 000/60 000/1 000, шаг 53.1), бюджет в `RequestContext` (шаг 70), проверка остатка + пер-вызововый `Call.timeout()` в `SourceExecutor` (шаги 619.1–619.4), таймаут LLM из остатка (шаг 762.1). **Отмены нет** (ADR-VL-09) — потолок гарантирован тем, что мы не начинаем вызов, который не влезает. Закрывает вопрос per-source таймаутов.
 40.13. [ВЛ] **ADR-VL-13 (Jackson/ResponseStatus)**: фикс Jackson 2→3 аннотаций в `entity/atlas/*`; убрать `@ResponseStatus(BAD_GATEWAY)` (ПРОТ-23/24).
 40.14. [ВЛ] **ADR-VL-14 (warmup в гейтвеях)**: `BzdService`/`BelHotelService` не заводим; warmup/retry в гейтвеях + `WarmupScheduler` (ПРОТ-25).
 40.15. [ВЛ] Пересобрать `13`, `16`, `22`, `23` под эти решения (устаревшие формулировки вычеркнуть, ссылки на `25_contradictions.md`).
@@ -85,22 +86,23 @@
 
 41. Проверить `Application` — добавить `@EnableScheduling`, `@EnableTransactionManagement`.
 42. Создать пул планировщика: bean `ThreadPoolTaskScheduler` (2 потока, именованные `sch-1..2`).
-43. Создать `RequestIdFilter` (OncePerRequestFilter): читает `X-Request-Id` или генерит UUID, кладёт в MDC `requestId`.
-44. Написать `RequestIdFilterTest` (unit): подстановка/генерация/проброс в атрибут запроса.
-45. Создать `ErrorCode` (enum) по блюпринту 23 (16 кодов) + отображение HTTP-статуса.
-46. Написать `ErrorCodeTest`: каждый код маппится в статус и в ключ i18n, нет дублей HTTP без категоризации.
-47. Создать `ErrorResponse` (record: requestId, code, httpStatus, message, source, domain, partial, retryAfterMs).
+43. Создать `RequestIdFilter` (OncePerRequestFilter): читает `X-Request-Id` (валидация: непустой, ≤64 символов, `[A-Za-z0-9._-]`) или генерит UUID, кладёт в MDC `requestId` + в атрибут запроса, **в `finally` очищает MDC** (Tomcat переиспользует потоки). Идемпотентность фильтр **не** проверяет — это `idempotency` в репозитории (шаг 187). [ВЛ] ADR-VL-11/016.
+44. Написать `RequestIdFilterTest` (unit): подстановка валидного заголовка, генерация при отсутствии, отбраковка мусорного значения, **проброс в атрибут запроса**, очистка MDC после запроса.
+45. Создать `ErrorCode` (enum) по блюпринту 23 (**17** кодов, включая `REQUEST_TIMEOUT` → 504 — ADR-VL-16) + отображение HTTP-статуса.
+46. Написать `ErrorCodeTest`: каждый код маппится в статус и в ключ i18n, нет дублей HTTP без категоризации; `REQUEST_TIMEOUT` → 504 отдельно от `SOURCE_TIMEOUT` → 200.
+47. ~~Создать `ErrorResponse` (record: requestId, code, httpStatus, message, source, domain, partial, retryAfterMs).~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-VL-01: ответ — `text/plain`, JSON-конверта нет. Наружу отдаётся только текст сообщения; `requestId` в теле ответа не участвует (ADR-011, §7.4 блюприта `23`).
 48. Создать `StormException` (abstract) с полями errorCode, source, retryAfterMs.
-49. Создать `GlobalExceptionHandler` (`@RestControllerAdvice`): обработчики StormException/ValidationException/Generic.
-50. «Гарантия» хендлера: внутренний исключение никогда не уходит клиенту (лог + INTERNAL_ERROR).
-51. Написать `GlobalExceptionHandlerTest`: матрица кодов → JSON.
-52. Создать `WebProperties` (`@ConfigurationProperties(prefix="storm.web")`): defaultDeadlineMs, maxOffers, langs.
+49. Создать `GlobalExceptionHandler` (`@RestControllerAdvice`): обработчики StormException/ValidationException/TimeoutException/Generic. Возвращают **текст**, а не JSON.
+50. «Гарантия» хендлера: внутреннее исключение никогда не уходит клиенту (лог + INTERNAL_ERROR). `TimeoutException` → **`REQUEST_TIMEOUT`/504**, а не partial (ADR-VL-16).
+51. Написать `GlobalExceptionHandlerTest`: матрица кодов → статус + текст (в т.ч. `REQUEST_TIMEOUT` → 504 и отсутствие `requestId` в ответе).
+52. Создать `WebProperties` (`@ConfigurationProperties(prefix="storm.web")`): maxOffers, langs. ~~defaultDeadlineMs~~ — **[ЗАМЕНЕНО]** бюджетом времени (ADR-VL-16), см. `TimeoutProperties` (шаг 53.1).
 53. Прописать базовые свойства в `application.properties`.
+53.1. [ВЛ] Создать `TimeoutProperties` (`@ConfigurationProperties(prefix="storm.timeout")`): `softBudgetMs=40000`, `hardCeilingMs=60000`, `minSourceCallMs=1000`; в `application.properties` выставить `okhttp.call-timeout-ms=60000` (в коде сейчас `0` = бесконечно). Карточка — [ADR-VL-16](decisions.md#adr-vl-16).
 54. Создать health-эндпоинты: `/api/v1/health/live`, `/ready`.
 55. Написать тест health: live всегда 200, ready зависит от БД и «все источники выключены». ~~`queue.reject`~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-VL-15 (очереди нет).
 56. ~~Создать `XRequestIdMDCFilter` для параллельных потоков: проброс MDC в виртуальные потоки (setup в ParallelExecutor).~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-VL-15: всё синхронно, дочерних потоков нет, MDC живёт в потоке HTTP-запроса.
 57. ~~Написать тест проброса MDC между потоками (assert requestId в дочернем потоке).~~ — **[ОТМЕНЕНО]** вместе с 56.
-58. Создать `ApiResponseEnvelope` (не обязательно) — если решим единый конверт; ADR-018 (черновик, не путать с ADR-VL-02).
+58. ~~Создать `ApiResponseEnvelope` (не обязательно) — если решим единый конверт; ADR-018 (черновик, не путать с ADR-VL-02).~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-VL-01: ответ — `text/plain`, конверта нет.
 59. Написать aspect-заглушку логирования входа/выхода контроллеров (время, requestId, код).
 60. Добавить `spring-boot-starter-actuator` и включить `metrics` endpoint (опциональный push в лог).
 61. Проверить, что actuator не светит данные наружу (manage endpoints для готовой откл. пока).
@@ -111,10 +113,10 @@
 66. Настроить логирование: pattern с `[%X{requestId}]` в `logback-spring.xml`.
 67. Написать конфиг логгера источников на уровне DEBUG под каталог `com.workspace.storm.event.gateway`.
 68. ~~Создать `AppConfig` дополнение: `ExecutorService` для параллельных задач (virtual-thread-per-task).~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-VL-15: общий executor для задач не нужен; остаётся только `ThreadPoolTaskScheduler` (шаг 42).
-69. Создать тест NPE-безопасности: `ErrorResponse` собирается при null source/домене.
-70. Создать `RequestContext` (requestId+deadline+lang), прокидывается через параметры (не ThreadLocal наружу).
+69. ~~Создать тест NPE-безопасности: `ErrorResponse` собирается при null source/домене.~~ — **[ОТМЕНЕНО]** вместе с `ErrorResponse` (шаг 47, ADR-VL-01).
+70. Создать `RequestContext` (record `requestId` + `startedAt` + `budgetDeadlineAt` + `hardDeadlineAt` + `lang` + `advisoryDeadlineMs`), прокидывается через параметры (не ThreadLocal наружу). [ВЛ] ADR-VL-16: 40 с / 60 с — из `TimeoutProperties`.
 71. ADR-019 (черновик): RequestContext передаётся явно (память о параллелизме), MDC — только для логов.
-72. Написать юнит-тест RequestContext (deadline расчёт, дефолты).
+72. Написать юнит-тест RequestContext (расчёт `budgetDeadlineAt = startedAt + 40 с`, `hardDeadlineAt = startedAt + 60 с`, дефолты, что клиентский `advisoryDeadlineMs` бюджет не увеличивает).
 73. Привязать `RequestIdFilter` к `/api/v1/**` (не ко всем путям).
 74. Добавить CORS-конфигурацию (для фронта) — ограничить origin'ы.
 75. Написать тест CORS.
@@ -466,8 +468,8 @@
 409. Написать тест: fallback-хендлер собирает warnings из всех sourceResults.
 410. Реализовать `Retry-After`-обработку: парсить из 503/429, класть в StormException.retryAfterMs.
 411. Написать тест: 503 с Retry-After→retryAfterMs установлен, max 5000.
-412. Написать `ErrorResponseBuilder` (одна точка построения JSON).
-413. Написать тест билдера: null-safe, все поля.
+412. ~~Написать `ErrorResponseBuilder` (одна точка построения JSON).~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-VL-01: JSON-конверта нет, наружу отдаётся текст. Единая точка сборки текста — `MessageResolver` (шаг 414).
+413. ~~Написать тест билдера: null-safe, все поля.~~ — **[ОТМЕНЕНО]** вместе с 412.
 414. Убедиться, что `message` берётся из i18n (сообщения пользователю) всегда.
 415. Сделать `messages.properties` + `_en` (каталог фазы 16 — заготовка).
 416. Конвертер кодов i18n: `MessageResolver` (простой enum+properties).
@@ -697,15 +699,20 @@
 ## ФАЗА 9. Последовательный исполнитель источников и сборка (611–720)
 
 611. Создать `orchestration/SourceExecutor` (бывший `ParallelSourceExecutor` → переименован по [ВЛ] ADR-VL-15; параллелизма в нём нет).
-612. АПИ: `List<PrincipalResult<T>> execute(List<SourceCall<T>>, RequestContext)` — без `deadline` (таймауты задаёт общий клиент, [ВЛ] ПРОТ-01, ADR-VL-15).
+612. АПИ: `List<PrincipalResult<T>> execute(List<SourceCall<T>>, RequestContext)`. [ВЛ] **Бюджет времени берётся из `RequestContext`**, а не из клиента: `ctx.budgetDeadlineAt()` (+40 с) и `ctx.hardDeadlineAt()` (+60 с) — ADR-VL-16. ~~Без `deadline`, таймауты задаёт общий клиент~~ — **[ЗАМЕНЕНО]** [ВЛ] ADR-VL-16.
 613. `SourceCall` — функциональный интерфейс `{SourceGateway gateway(); T call();}` (фабрика по гейтвею).
 614. ~~Внутренняя модель `CallFuture` (future + key + gateway) — остаётся для сбора статусов.~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-VL-15: future'ов нет, статусы копятся в `ResultCollector` по мере обхода.
 615. ~~Реализовать fan-out: каждый SourceCall на виртуальном потоке (`Thread.startVirtualThread`).~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-VL-15: вызовы **последовательно**, в порядке списка, в текущем потоке.
 616. ~~Пробросить MDC requestId в дочерние потоки (шаг 56).~~ — **[ОТМЕНЕНО]** вместе с 615.
-617. Реализовать сбор результатов: последовательный обход `SourceCall` → `PrincipalResult` (ok/failure/timeout/skipped) → список. **Каждый источник доводится до конца**, упавший не отменяет остальные и не теряет уже собранное. [ВЛ] ПРОТ-01, ADR-VL-15
-618. ~~Deadline-модель: `deadline = min(request.deadlineMs, budget)`~~ — **[ОТМЕНЕНО]** [ВЛ]: общего дедлайна нет; `deadlineMs` — advisory (лог/метрика), таймауты задаёт общий клиент.
-619. ~~По истечении `future.cancel(true)` → TIMEOUT~~ — **[ОТМЕНЕНО]** вместе с 618; TIMEOUT приходит из таймаута клиента.
-620. Написать тест: медленный источник (таймаут клиента) → TIMEOUT, быстрый — OK; обход продолжается по всем источникам.
+617. Реализовать сбор результатов: последовательный обход `SourceCall` → `PrincipalResult` (ok/failure/timeout/skipped/skippedNoBudget) → список. **Каждый начатый вызов доводится до конца**, упавший не отменяет остальные и не теряет уже собранное. [ВЛ] ПРОТ-01, ADR-VL-15
+618. ~~Deadline-модель: `deadline = min(request.deadlineMs, budget)`~~ — **[ЗАМЕНЕНО]** [ВЛ] ADR-VL-16: `deadlineMs` клиента — **advisory** (лог/метрика), бюджет от него не растёт; настоящий предел — `budgetDeadlineAt`/`hardDeadlineAt` из `TimeoutProperties`.
+619. ~~По истечении `future.cancel(true)` → TIMEOUT~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-VL-09/ADR-VL-15: `cancel()` не используется; TIMEOUT приходит из таймаута конкретного вызова.
+619.1. [ВЛ] **Проверка бюджета перед каждым вызовом** (ADR-VL-16): `remaining = budgetDeadlineAt − now`; если `remaining ≤ minSourceCallMs` (1 с) → **вызов не делается**, `SKIPPED_NO_BUDGET`, метрика `source.skipped`, предупреждение пользователю; иначе таймаут вызова = `remaining`.
+619.2. [ВЛ] **Пер-вызововый таймаут без второго клиента**: `client.newCall(request).timeout().timeout(remaining, MILLISECONDS)` — в OkHttp 5 `Call.timeout()` возвращает `okio.Timeout`, общий `enter()/exit()` одинаков для синхронного `execute()`. `newBuilder()`/`newCall` с другим клиентом **не используем** (ADR-008 заменён).
+619.3. [ВЛ] Потолок 60 с: перед отправкой ответа и перед вызовом LLM проверяем `hardDeadlineAt`; не уложились → `REQUEST_TIMEOUT` → 504 (даже при собранных офферах, §7.2 блюприта `23`).
+619.4. [ВЛ] Остаток после источников уходит в LLM: `llmTimeout = min(remaining40, remaining60, llmTimeoutMs=30000)`. Если остаток ≤ 0 — LLM не вызывается, сразу `REQUEST_TIMEOUT`/504.
+620. Написать тест: медленный источник (таймаут вызова) → TIMEOUT, быстрый — OK; обход продолжается по всем источникам.
+620.1. [ВЛ] Написать тест бюджета (ADR-VL-16): искусственно малый `softBudgetMs` → последние источники получают `SKIPPED_NO_BUDGET`; при `hardCeilingMs` меньше суммы таймаутов → `REQUEST_TIMEOUT`/504; клиент не клонируется (один бин, кол-во пулов соединений = 1).
 621. ~~Тест: отменённая задача не оставляет висящих вызовов~~ — **[ОТМЕНЕНО]** вместе с 618.
 622. Гарантия порядка: результаты возвращаются **в порядке вызова** источников; ни приоритетов, ни FIFO-очереди нет. [ВЛ] ADR-VL-15 (ПРОТ-05 снят)
 623. Написать тест порядка.
@@ -714,10 +721,10 @@
 626. Обработка пустого набора задач: вернуть empty быстро.
 627. Написать тест пустого вызова.
 628. ~~Sleep на `deadline`~~ — **[ОТМЕНЕНО]** вместе с 618; ждём реальные таймауты источников.
-629. ~~Тест: не блокируем вызывающий поток больше deadline+slack~~ — переформулировать: последовательный вызов возвращается, когда все источники ответили или сработали их таймауты.
+629. [ВЛ] **Переформулировать**: последовательный обход возвращается, когда все источники ответили, сработали их таймауты, либо остаток бюджета стал ≤ `minSourceCallMs` (тогда остальные — `SKIPPED_NO_BUDGET`). Жёсткой границы 60 с на этом шаге нет — её проверяет вызывающий код, см. 619.3.
 630. ~~Защита «не отменяем преждевременно» (graceSlack)~~ — **[ОТМЕНЕНО]** вместе с 618.
 631. ~~Написать тест slack.~~ — **[ОТМЕНЕНО]** вместе с 630.
-632. Обработка прерывания: отмены запроса нет (ADR-VL-09), таймаут приходит из клиента; при остановке приложения — лог WARN по незавершённому вызову.
+632. Обработка прерывания: отмены запроса нет (ADR-VL-09), таймаут приходит из таймаута конкретного вызова; при остановке приложения — лог WARN по незавершённому вызову.
 633. Написать тест: прерывание не роняет весь конвейер, ошибка источника уходит в `warnings`.
 634. Создать `ResultCollector`: собирает PrincipalResult'ы в `ToolResult` (offers, warnings, statuses).
 635. Реализовать склейку warnings (дедуп текста, limit 5).
@@ -806,7 +813,7 @@
 712. Тест top-N.
 713. Стабильная сортировка (tie-break: source priority).
 714. Тест tie-break.
-715. `Combiner` результат → `SearchResponse.groups` (по доменам) + `combos`.
+715. [ВЛ] `Combiner` результат → внутренняя структура (офферы по доменам + `combos`), которая уходит в LLM и/или в текстовый ответ. ~~`SearchResponse.groups`~~ — **[ОТМЕНЕНО]** ADR-VL-01: JSON-ответа нет, наружу идёт текст.
 716. Написать тест: структура response (группы/комбо) по фикстуре.
 717. Проверка пустоты: если 0 офферов во всем — ответ с warning ALL_SOURCES_UNAVAILABLE (если все источники).
 718. Тест: 0 офферов → корректная семантика (но warn иначе).
@@ -857,7 +864,7 @@
 760. Залогировать промпты/резюме (без секретов) в `request_log.intentJson` / summary-файл.
 761. Тест: промпты не содержат API-ключей.
 762. Коммит «ADD: LLM-гейт (OpenRouter, function calling), агентный цикл, кларификация».
-762.1. [ВЛ] Реализовать **агентный цикл**: LLM возвращает `tool_calls` → `SourceExecutor` выполняет их **последовательно**, доводя каждый до конца → результаты (`{status, offers|error}`) возвращаются в LLM → повтор до `maxToolRounds` → финальный текст (ADR-VL-03, ADR-VL-15).
+762.1. [ВЛ] Реализовать **агентный цикл**: LLM возвращает `tool_calls` → `SourceExecutor` выполняет их **последовательно**, доводя каждый начатый до конца → результаты (`{status, offers|error}`) возвращаются в LLM → повтор до `maxToolRounds` → финальный текст (ADR-VL-03, ADR-VL-15). Каждый цикл LLM и каждый раунд инструментов **берут таймаут из остатка бюджета** ([ADR-VL-16](decisions.md#adr-vl-16)), шаг 619.4.
 762.2. [ВЛ] Инструменты-LLM: по одному на источник (`search_atlasbus`, `search_ticketbus`, `search_bzd`, `search_ticketpro`, `search_belhotel`) + `get_offers`; лимит 1 вызов на источник за раунд; лимит раундов — из настроек агента (`AgentProperties.llm.maxToolRounds=2`).
 762.3. [ВЛ] Fallback-решатель (пока нет ключа OpenRouter): тот же цикл, выбор источников по контексту/флагам, финальный текст собирается из офферов по шаблону.
 762.4. [ВЛ] Тест агентного цикла (на моке LLM): 2 раунда, tool-результаты с ошибкой источника, упавший источник упомянут в тексте.
@@ -1111,11 +1118,11 @@
 
 Тесты группируются по слоям; каждый пункт = автотест с однозначным условием прохождения.
 
-956. Юнит `ErrorCodeTest`: 16 кодов → HTTP-статус + ключ i18n; покрытие 100%.
+956. Юнит `ErrorCodeTest`: **17** кодов → HTTP-статус + ключ i18n; покрытие 100%; `REQUEST_TIMEOUT` → 504, `SOURCE_TIMEOUT` → 200 (ADR-VL-16).
 957. Юнит `MessageResolverTest`: ru/en, fallback на ru, отсутствие ключа → сам код.
-958. Контракт `ErrorResponseTest`: сериализация в JSON, поле requestId обязательное.
-959. Advice-тест `GlobalExceptionHandlerTest`: все коды → корректные HTTP и тело.
-960. Юнит `RequestIdFilterTest`: генерация, проброс в MDC, парсинг заголовка.
+958. ~~Контракт `ErrorResponseTest`: сериализация в JSON, поле requestId обязательное.~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-VL-01/ADR-011: ответа в JSON нет, `requestId` наружу не отдаётся. Заменяется проверкой текстового тела в шаге 959.
+959. Advice-тест `GlobalExceptionHandlerTest`: все коды → корректный HTTP-статус и текст; `REQUEST_TIMEOUT` → 504; в теле нет ни JSON, ни `requestId`.
+960. Юнит `RequestIdFilterTest`: генерация, проброс в MDC, парсинг заголовка, отбраковка мусорного значения, **очистка MDC** в `finally`.
 961. Интеграционный `RequestIdFlowTest`: контроллер → advice → лог содержит один и тот же requestId.
 962. ~~Юнит `CircuitBreakerWindowTest`~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-VL-04.
 963. ~~Юнит `CircuitTransitionTest`~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-VL-04.

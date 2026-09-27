@@ -31,7 +31,7 @@ Java 21 (платформенные потоки, виртуальные — о�
 ## 2. Контракты высокого уровня
 
 1. **Изоляция**: источник никогда не пробрасывает исключение наружу из инструмента — всегда `PrincipalResult` (успех/ошибка/partial/timeout).
-2. **[ВЛ] Синхронный вызов источников (ADR-VL-15)**: N источников вызываются **последовательно**, в порядке от LLM; каждый доводится до конца (ограничен таймаутом клиента), упавший не отменяет остальные и попадает в `warnings`. Общего `deadline` и отмены нет (ADR-VL-09, ПРОТ-01/02).
+2. **[ВЛ] Синхронный вызов источников (ADR-VL-15)**: N источников вызываются **последовательно**, в порядке от LLM; каждый **начатый** доводится до конца (ограничен таймаутом вызова), упавший не отменяет остальные и попадает в `warnings`. Отмены нет (ADR-VL-09, ПРОТ-01/02). **[ВЛ] Бюджет времени (ADR-VL-16)**: источники и LLM делят 40 с, потолок всего запроса — 60 с → `REQUEST_TIMEOUT`/504.
 3. **Целостность**: после сборки результаты immutable; дедупликация по глобальному `offerId`. ~~сессия атомарна (ветка refine мержится)~~ — **[ОТМЕНЕНО]** (ADR-VL-03): сессия = история реплик в `session_message`.
 4. **Перехват**: все исключения проходят через единый `GlobalExceptionHandler`; `ErrorCode` однозначно маппится в (HTTP-статус, пользовательское сообщение, метрика).
 5. **request-id** пробивается от HTTP-запроса через MDC в логи каждого источника.
@@ -217,9 +217,11 @@ com.workspace.storm.event
 }
 ```
 
-Коды ошибок (`ErrorCode`): `BAD_REQUEST, VALIDATION_FAILED, INTENT_NOT_RECOGNIZED, CLARIFICATION_REQUIRED, SOURCE_UNAVAILABLE, SOURCE_TIMEOUT, SOURCE_AUTHORIZATION, SOURCE_RATE_LIMITED, SOURCE_PARSE_ERROR, CIRCUIT_OPEN, ALL_SOURCES_UNAVAILABLE, LLM_UNAVAILABLE, SESSION_EXPIRED, QUEUE_REJECTED, TOO_MANY_REQUESTS, INTERNAL_ERROR`. [ВЛ] `CIRCUIT_OPEN` и `QUEUE_REJECTED` остаются в enum, но **не выдаются** (ADR-VL-04, ADR-VL-15).
+Коды ошибок (`ErrorCode`): `BAD_REQUEST, VALIDATION_FAILED, INTENT_NOT_RECOGNIZED, CLARIFICATION_REQUIRED, SOURCE_UNAVAILABLE, SOURCE_TIMEOUT, SOURCE_AUTHORIZATION, SOURCE_RATE_LIMITED, SOURCE_PARSE_ERROR, CIRCUIT_OPEN, ALL_SOURCES_UNAVAILABLE, LLM_UNAVAILABLE, REQUEST_TIMEOUT, SESSION_EXPIRED, QUEUE_REJECTED, TOO_MANY_REQUESTS, INTERNAL_ERROR` (**17** кодов). [ВЛ] `CIRCUIT_OPEN` и `QUEUE_REJECTED` остаются в enum, но **не выдаются** (ADR-VL-04, ADR-VL-15). `REQUEST_TIMEOUT` добавлен ADR-VL-16 — единственный код, означающий не частичный результат источника, а **весь запрос** не уложился в 60 с.
 
-Важно: HTTP-статус ошибки **частичного/пустого источника — 200** (`partial=true` и список предупреждений), т.к. сессия не падает. 4xx/5xx наружу уходят только для `BAD_REQUEST`, `TOO_MANY_REQUESTS(429)`, `INTERNAL_ERROR(500)`, `SESSION_EXPIRED(409)`. ~~`QUEUE_REJECTED(503)`~~ — **[ОТМЕНЕНО]** ADR-VL-15.
+Важно: HTTP-статус ошибки **частичного/пустого источника — 200** (`partial=true` и список предупреждений), т.к. сессия не падает. 4xx/5xx наружу уходят только для `BAD_REQUEST`, `TOO_MANY_REQUESTS(429)`, `INTERNAL_ERROR(500)`, `SESSION_EXPIRED(409)`, `REQUEST_TIMEOUT(504)`. ~~`QUEUE_REJECTED(503)`~~ — **[ОТМЕНЕНО]** ADR-VL-15.
+
+[ВЛ] **Отличие `SOURCE_TIMEOUT` от `REQUEST_TIMEOUT`** ([ADR-VL-16](decisions.md#adr-vl-16)): источник не ответил в отведённый ему остаток бюджета → `SOURCE_TIMEOUT` и **200** с предупреждением, остальные источники и LLM работают дальше. Весь запрос не уложился в 60 с → `REQUEST_TIMEOUT` и **504**: это единственная ошибка, которая **не** возвращает частичный результат, даже если офферы уже собраны (решение владельца: «выдать ошибку клиенту»).
 
 ### 4.4 Унифицированная модель оффера
 
@@ -330,19 +332,40 @@ public record ToolResult(
 ### 6.2 Контракт вызова источников (SourceExecutor)
 
 - **[ВЛ] Синхронно, в текущем потоке** (ADR-VL-15): список `SourceCall` обходится по порядку, каждый вызов выполняется в том же потоке, что и HTTP-запрос. Виртуальных потоков, `ExecutorService` и `CompletableFuture` нет (ADR-009 заменён).
-- **Таймауты**: **один** `OkHttpClient` на всё приложение, один набор таймаутов из `OkHttpProperties`: connect 5s, read 10s, `callTimeout` — **явно, без `0` (= бесконечный)**. ~~per-source оверрайды через `newBuilder()`, SSE-пул~~ — **ОТМЕНЕНО** (ADR-008 заменён).
-- **Доводим до конца** [ВЛ]: каждый источник вызывается до таймаута или успеха; упавший не отменяет остальные и не теряет уже собранное. Общего `deadline` нет, отмены нет (ADR-VL-09, ПРОТ-01/02). `deadlineMs` из запроса, если передан, — **advisory**: пишем в лог/метрику, но ничего не обрываем.
+- **[ВЛ] Таймауты**: **один** `OkHttpClient` на всё приложение, один набор базовых таймаутов из `OkHttpProperties`: connect 5s, read 10s, write 10s, `callTimeout` = 60 000 (в коде сейчас `0` = бесконечно — **исправить**). ~~per-source оверрайды через `newBuilder()`, SSE-пул~~ — **ОТМЕНЕНО** (ADR-008 заменён). Фактический таймаут каждого вызова считается от остатка бюджета — см. «Бюджет времени запроса» ниже.
+- **[ВЛ] Бюджет времени запроса** ([ADR-VL-16](decisions.md#adr-vl-16)): `RequestContext` несёт `budgetDeadlineAt = start + 40 с` и `hardDeadlineAt = start + 60 с` (монотонное время). Перед каждым вызовом:
+  - `remaining = budgetDeadlineAt − now`; если `remaining ≤ minSourceCallMs` (1 с) → вызов **не делается**, `SKIPPED_NO_BUDGET`, метрика `source.skipped`, предупреждение пользователю (ADR-VL-07);
+  - иначе таймаут **конкретного вызова** = `remaining`, через `client.newCall(request).timeout().timeout(remaining, MILLISECONDS)` — в OkHttp 5 `Call.timeout()` пер-вызововый, второй клиент не нужен;
+  - после источников LLM получает `min(remaining40, remaining60, llmTimeoutMs=30 c)`;
+  - к `start + 60 с` запрос не завершён → `REQUEST_TIMEOUT` → **504** (даже при собранных офферах).
+- **Доводим до конца** [ВЛ]: каждый **начатый** вызов доводится до успеха или своего таймаута; упавший не отменяет остальные и не теряет уже собранное. **Отмены нет** — ни `cancel()`, ни `AbortController`, ни обрыва уже идущего запроса (ADR-VL-09). Потолок 60 с гарантирован конструкцией: мы просто не начинаем вызов, который в бюджет не влезает. `deadlineMs` из запроса, если передан, — **advisory**: пишем в лог/метрику, бюджет от него не растёт.
 - **Один источник — одно исключение**: гейтвей сам ловит всё и превращает в `PrincipalResult` (включая таймаут); наружу утекает только `InterruptedException` при shutdown.
 - **Skip** [ВЛ]: если `draining=true` или `enabled=false` — вызов **не делается**, результат `SKIPPED`, метрика `source.skipped`. ~~`circuit OPEN`~~ — **ОТМЕНЕНО** (ADR-VL-04).
 - **Порядок** [ВЛ]: результаты **в порядке вызова**; приоритетов и сортировки по `priority()` нет (ADR-VL-05/ADR-VL-15).
-- **Цена решения**: худший случай ответа = сумма таймаутов источников подряд. Поэтому таймауты короткие, а результаты кэшируются (TTL 5 мин).
+- **Цена решения**: внутри бюджета источники могут не успеть — тогда часть вызовов пропускается, а ответ упирается в 60 с. Поэтому таймауты короткие, кэш обязателен (TTL 5 мин), а дешёвые источники ставятся в порядок вызова первыми.
 
 ```java
 public class SourceExecutor {
-    <T> List<PrincipalResult<T>> execute(List<SourceCall<T>> calls);
-    // последовательно, в текущем потоке; каждый источник ограничен таймаутом клиента;
-    // отмены и общего deadline нет; порядок = порядок вызова
+    <T> List<PrincipalResult<T>> execute(List<SourceCall<T>> calls, RequestContext ctx);
+    // последовательно, в текущем потоке; таймаут каждого вызова = остаток бюджета (ADR-VL-16);
+    // при remaining <= 1с — SKIPPED_NO_BUDGET; отмены нет; порядок = порядок вызова
 }
+```
+
+```java
+public record RequestContext(
+        String requestId,
+        Instant startedAt, long budgetDeadlineAt,  // +40 с — мягкий бюджет
+        long hardDeadlineAt,                      // +60 с — потолок, REQUEST_TIMEOUT/504
+        String lang,
+        Long advisoryDeadlineMs) {}
+
+// типичный вызов источника внутри SourceExecutor
+long remaining = ctx.budgetDeadlineAt() - System.nanoTime() / 1_000_000;
+if (remaining <= minSourceCallMs) return PrincipalResult.skippedNoBudget(call.source());
+Call call = httpClient.newCall(request);
+call.timeout().timeout(remaining, TimeUnit.MILLISECONDS);   // пер-вызововый таймаут, клиент не клонируем
+return gateway.execute(call);
 ```
 
 ### 6.3 Combiner и Ranker
@@ -389,6 +412,7 @@ StormException (abstract)                         — несёт ErrorCode error
 | невалидный запрос | validation | `BAD_REQUEST` | 400 | сообщение валидатора |
 | ~~очередь переполнена~~ | ~~`queue.reject`~~ | ~~`QUEUE_REJECTED`~~ | ~~503~~ | **[ОТМЕНЕНО]** ADR-VL-15: очереди нет |
 | сессия протухла | — | `SESSION_EXPIRED` | 409 | Сессия истекла, начните заново |
+| **весь запрос не уложился в 60 с** [ВЛ] | `TimeoutException` (SoftTimeout) / проверка `hardDeadlineAt` | **`REQUEST_TIMEOUT`** | **504** | Сервис не успел ответить, попробуйте позже |
 | нераспознанный интент | `Validator` | `CLARIFICATION_REQUIRED` | 200 | Уточните город/дату |
 | внутренняя ошибка | утечка | `INTERNAL_ERROR` | 500 | Внутренняя ошибка, попробуйте позже |
 
@@ -397,18 +421,19 @@ StormException (abstract)                         — несёт ErrorCode error
 ```java
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-    @ExceptionHandler(StormException.class)   ErrorResponse handle(StormException e);   // по e.errorCode
+    @ExceptionHandler(StormException.class)   String handle(StormException e);   // по e.errorCode → текст
     @ExceptionHandler(MethodArgumentNotValidException.class)  // → BAD_REQUEST, список полей
     @ExceptionHandler(Exception.class)         // → INTERNAL_ERROR, полный стек в лог, к клиенту — без деталей
-    @ExceptionHandler(CancellationException.class) / TimeoutException  // → 504? нет: SEARCH_FINISHED_PARTIAL
+    @ExceptionHandler(TimeoutException.class)  // → REQUEST_TIMEOUT, 504 (ADR-VL-16), НЕ partial
 }
 ```
-Все хендлеры: кладут `requestId` в ответ, инкрементят метрику, не светят стектрейс наружу.
+[ВЛ] Ответ — **текст**, поэтому `requestId` в тело ответа **не кладём** (ADR-VL-01): `requestId` берётся логгером из MDC (ADR-011). Все хендлеры: инкрементят метрику, пишут в лог с `[%X{requestId}]`, наружу стектрейс не светят. ~~кладут `requestId` в ответ~~ — **[ОТМЕНЕНО]** вместе с JSON-конвертом.
 
 ### 7.4 RequestIdFilter
 
-- `OncePerRequestFilter`: генерирует/читает `X-Request-Id`, кладёт в MDC, пробрасывает в `PrincipalResult` и `ErrorResponse`.
-- При `POST /search` также проверяет идемпотентность по `requestId` (повторный requestId → тот же кэшированный ответ/сессия).
+- `OncePerRequestFilter`: читает `X-Request-Id` (если есть и проходит валидацию: не пустой, длина ≤ 64, символы `[A-Za-z0-9._-]`), иначе генерирует UUID; кладёт значение в **MDC** под ключом `requestId` и в атрибут запроса; в `finally` **очищает MDC** — Tomcat переиспользует потоки, иначе ID «утечёт» в следующий запрос.
+- Тело ответа не меняет; `requestId` используется в `request_log`/`source_error_log`/`session_message` (ADR-011).
+- **Идемпотентность фильтр не проверяет** [ВЛ]: дедупликация по `requestId` — `INSERT … ON CONFLICT DO NOTHING` в таблице `idempotency` (ADR-001, шаг 187), то есть в репозитории/сервисе, а не в web-слое. ~~При `POST /search` также проверяет идемпотентность~~ — **[ОТМЕНЕНО]**: эндпоинта `/search` не существует (ADR-VL-01).
 
 ## 8. Каталог сообщений ошибок
 
@@ -505,9 +530,9 @@ public record SessionMessage(long id, String sessionId, String role, String text
 
 - `MetricsCollector` — инкрементальные счётчики с тегами:
   - `source.errors{source, code}` — на каждую ошибку источника;
-  - `source.latency{source}_ms{histogram}`; `source.skipped{source}`;
+  - `source.latency{source}_ms{histogram}`; `source.skipped{source}` (в т.ч. `SKIPPED_NO_BUDGET` — не хватило бюджета времени, ADR-VL-16);
   - ~~`source.circuit{source}=open`~~ — **[ОТМЕНЕНО]** (ADR-VL-04/022); имена метрик — по словарю в `25_contradictions.md` (ПРОТ-20);
-  - `parse.errors{source}`; `all.sources.disabled`; ~~`queue.length`, `queue.rejected`~~ — **[ОТМЕНЕНО]** (ADR-VL-15: очереди нет);
+  - `parse.errors{source}`; `all.sources.disabled`; `request.timeout` (ADR-VL-16: сработал потолок 60 с); ~~`queue.length`, `queue.rejected`~~ — **[ОТМЕНЕНО]** (ADR-VL-15: очереди нет);
   - `session.active`, `llm.errors{code}`.
 - `AlertEvaluator` — локальные пороги (без Prometheus, чтобы не добавлять зависимость): `parse.errors > 10/мин` → лог WARN + webhook-заглушка; 404/редирект домена → alert «обновить Constants»; SSL → alert «проверить сертификат»; капча → alert «анти-бот».
 - Health: `ready` проверяет БД и «все источники отключены/недоступны»; `live` — только JVM. ~~проверку очереди~~ — **[ОТМЕНЕНО]** (ADR-VL-15).
@@ -517,11 +542,11 @@ public record SessionMessage(long id, String sessionId, String role, String text
 
 1. **Идемпотентность**: `requestId` уникален на (пользователь, короткое окно); повторный `requestId` обрабатывается один раз — гарантирует таблица `idempotency` (`INSERT … ON CONFLICT DO NOTHING`, ADR-001). ~~не попадает в очередь второй раз~~ — **[ОТМЕНЕНО]** (ADR-VL-15). ~~возвращает тот же `SearchResponse`~~ — **[ОТМЕНЕНО]** (ADR-VL-01): ответ — текст, повтор отдаётся из кэша.
 2. **Атомарность сессии**: [ВЛ] реплики сессии пишутся последовательно в `session_message`; отдельных refine-веток нет (ADR-VL-01/019).
-3. **Завершённость обхода источников**: [ВЛ] `SourceExecutor` последовательно доводит **каждый** источник до результата или таймаута; «зависший» вызов невозможен — ограничение задаёт таймаут клиента. Отмены и дочерних потоков нет (ADR-VL-09, ADR-VL-15).
+3. **Завершённость обхода источников**: [ВЛ] `SourceExecutor` последовательно доводит **каждый начатый** вызов до результата или таймаута; «зависший» вызов невозможен — ограничение задаёт таймаут вызова (остаток бюджета, [ADR-VL-16](decisions.md#adr-vl-16)). Отмены и дочерних потоков нет (ADR-VL-09, ADR-VL-15). Источник, которому остатка не хватило, **пропускается** (`SKIPPED_NO_BUDGET`), а не обрывается на середине.
 4. **Валидность оффера**: ни один `Offer` с `null` в обязательных полях (domain, from, to, departure, price) не попадает в ответ — режет `OfferNormalizer`.
 5. **Дедупликация** single-pass: на входе (парсер) по `rideId`, на выходе (Combiner) по нормализованному `offerId`.
 6. **Валютная целостность**: цена сравнивается только в BYN; если валюта неизвестна — оффер помечается `attributes.currencyKnown=false` и не участвует в сортировке по цене.
-7. **Данные не теряются при partial**: `partial=true` идёт до пользователя вместе с собранным, а не превращается в пустоту.
+7. **Данные не теряются при partial**: `partial=true` идёт до пользователя вместе с собранным, а не превращается в пустоту. **Исключение** [ВЛ]: если сработал потолок 60 с — `REQUEST_TIMEOUT`/504 **без** собранного ([ADR-VL-16](decisions.md#adr-vl-16)).
 
 ## 15. Порядок реализации (фазы)
 
@@ -529,12 +554,12 @@ public record SessionMessage(long id, String sessionId, String role, String text
 
 | Фаза | Делаем | Выход |
 |---|---|---|
-| **0. Каркас** | пул планировщика (без virtual threads — ADR-VL-15), `RequestIdFilter`, `GlobalExceptionHandler`, `ErrorCode`, гербарий `ErrorResponse` | web-бейз, health, тест ошибок |
+| **0. Каркас** | пул планировщика (без virtual threads — ADR-VL-15), `RequestIdFilter` (с очисткой MDC), `GlobalExceptionHandler`, `ErrorCode` (17 кодов) | web-бейз, health, тест ошибок |
 | **1. Исключения** | новая иерархия поверх существующих `*Client/ServiceException`, `ParseException`, карта маппинга | unit-тесты карты, advise-тесты |
 | **2. Unified-модель + Normalizer** | `Offer`, `Price`, `GeoPoint`, мапперы с 5 парсеров | unit-тесты нормализации (копейки, валюты, null, диапазоны) |
 | **3. Гейтвеи** | 5 адаптеров поверх существующих клиентов | unit (mock клиента) + интеграция по живому источнику |
 | **4. ~~Circuit + Registry~~** | **[ОТМЕНЕНО]** (ADR-VL-04) — вместо: per-source таймауты, `source.errors`+алерты, `enabled`/`draining` | unit `SourceErrorCountTest` (retry = 1 ошибка) |
-| **5. SourceExecutor + Collector** | последовательный вызов источников, **каждый доводится до конца, без дедлайна и отмены**, порядок вызова | unit-тесты таймаутов клиента и частичных результатов |
+| **5. SourceExecutor + Collector** | последовательный вызов источников, **каждый начатый доводится до конца, без отмены**, таймаут вызова = остаток бюджета, `SKIPPED_NO_BUDGET` при нехватке, порядок вызова | unit-тесты таймаутов вызова, пропуска по бюджету и частичных результатов |
 | **6. Tools** | [ВЛ] инструменты-LLM по одному на источник (`search_atlasbus`, `search_ticketbus`, `search_bzd`, `search_ticketpro`, `search_belhotel`, `get_offers`) + ToolResult | тесты: «один источник лежит — второй отдаёт, упавший упомянут в тексте» |
 | **7. Combiner + Ranker** | дедуп, комбо, бюджет, сортировка, «отель рядом» | unit-тесты склейки (1–4 домена) |
 | **8. LLM-гейт + агентный цикл** | `LlmGateway` (OpenRouter, function calling), `AgentLoop` (maxToolRounds из настроек), `RuleBasedFallback` без ключа | тест агентного цикла на моке LLM, тест фолбэка (АНП-100) |
@@ -551,7 +576,7 @@ public record SessionMessage(long id, String sessionId, String role, String text
 2. Файлы: создать пустые каркасы (интерфейс + заглушка), подключить в Spring (bean-граф).
 3. Реализация happy-пути `U` (по выбранному объёму).
 4. Обработка каждого unhappy-кода из каталога 1–235, относящегося к `U` (исключение → `ErrorCode` → сообщение → метрика → alert).
-5. Конфиги: `application.properties` (`SessionProperties`, `OkHttpProperties` (таймауты клиента), `LlmProperties`/`AgentProperties`). ~~`QueueProperties`~~ — **[ОТМЕНЕНО]** (ADR-VL-15). ~~`CircuitPolicy`~~ — **[ОТМЕНЕНО]** (ADR-VL-04).
+5. Конфиги: `application.properties` (`SessionProperties`, `OkHttpProperties` (таймауты клиента), `TimeoutProperties` (бюджет 40/60 с — ADR-VL-16), `LlmProperties`/`AgentProperties`). ~~`QueueProperties`~~ — **[ОТМЕНЕНО]** (ADR-VL-15). ~~`CircuitPolicy`~~ — **[ОТМЕНЕНО]** (ADR-VL-04).
 6. Юнит-тесты: happy, каждый happy-вариант, каждое исключение, таймауты, null, дедуп.
 7. Интеграционные тесты (mock OkHttp `MockWebServer` — добавить в тесты; live-интеграции уже есть).
 8. Тесты контрактов API (JSON фикстуры) + тесты сообщений (i18n).
