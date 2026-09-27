@@ -2,10 +2,11 @@
 
 ## Проблемы параллелизма
 
-### АНП-56. Один из виртуальных потоков кинул unchecked
-`SearchBusesTool` вызывает Atlas и TicketBus через `CompletableFuture`.
-Один кидает `RuntimeException` вне try/catch. `safeGet` ловит всё `Throwable`,
-логирует, возвращает пустой список. Остальные потоки не страдают.
+### ~~АНП-56. Один из виртуальных потоков кинул unchecked~~ — **[ОТМЕНЕНО]** (ADR-VL-15)
+[ВЛ] `CompletableFuture` и виртуальных потоков нет: `SearchBusesTool` вызывает Atlas и TicketBus **последовательно**, каждое исключение ловится гейтвеем и превращается в `PrincipalResult`.
+~~`SearchBusesTool` вызывает Atlas и TicketBus через `CompletableFuture`.~~
+~~Один кидает `RuntimeException` вне try/catch. `safeGet` ловит всё `Throwable`,
+логирует, возвращает пустой список. Остальные потоки не страдают.~~
 
 ### АНП-57. Deadlock в session store
 Два запроса на одну сессию одновременно. Session store использует
@@ -13,9 +14,8 @@
 Если первый висит 30 сек — таймаут, отказ.
 
 ### АНП-58. Утечка потоков
-`Executors.newVirtualThreadPerTaskExecutor()` не закрыт try-with-resources.
-Потоки копятся.
-**Fix:** всегда `try (var exec = ...)`.
+~~`Executors.newVirtualThreadPerTaskExecutor()` не закрыт try-with-resources.~~ — **[ОТМЕНЕНО]** (ADR-VL-15: пулов источников не создаём; try-with-resources в `Application` / `@PreDestroy`).
+[ВЛ] Пул источников не создаётся; все закрываемые ресурсы (планировщики, `DataSource`) — через `@PreDestroy`/try-with-resources в `Application`.
 
 ## Специфика РФ
 

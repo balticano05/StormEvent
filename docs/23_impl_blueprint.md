@@ -1,10 +1,10 @@
-# Блюпринт реализации (нижний уровень): API, гейтвеи, планировщики, обработчики, исключения, параллельность
+# Блюпринт реализации (нижний уровень): API, гейтвеи, планировщики, обработчики, исключения, последовательный вызов источников
 
 Назначение документа — быть **исходником для построения детального плана (1000+ шагов)**.
 
 > **Обновлено по решениям владельца** ([`25_contradictions.md`](25_contradictions.md), разделы 0, 0.1, 0.2). `~~отменено~~` — правила, **не реализуемые в MVP**; `[ВЛ]` — действующие решения.
-> Ключевые отмены: circuit breaker (ADR-VL-04), общий `deadlineMs`/отмена запросов (ADR-VL-09, ПРОТ-01), JSON-контракт `SearchResponse` и `openapi.yml` (ADR-VL-01), эндпоинты `search`/`refine` (ADR-VL-01), приоритеты и aging очереди (ADR-VL-05), Prometheus (ADR-VL-06), Redis-сессии → Postgres `session_message` с TTL 15 мин (ADR-VL-02), `forceSource` (ADR-VL-03), обход anti-bot (ADR-VL-12).
-Здесь зафиксированы контракты нижнего уровня: какие пакеты/классы/интерфейсы строить, какие REST-эндпоинты и JSON-структуры, как устроены гейтвеи, планировщики, обработчики, система исключений и перехват, сообщения ошибок, контракт параллельных запросов и целостность данных.
+> Ключевые отмены: circuit breaker (ADR-VL-04), общий `deadlineMs`/отмена запросов (ADR-VL-09, ПРОТ-01), JSON-контракт `SearchResponse` и `openapi.yml` (ADR-VL-01), эндпоинты `search`/`refine` (ADR-VL-01), очередь целиком — `RequestQueue`/воркеры/backpressure (ADR-VL-05 → **заменено ADR-VL-15**), приоритеты и aging очереди (ADR-VL-05/ADR-VL-12), параллельный fan-out на виртуальных потоках (ADR-VL-09 → **заменено ADR-VL-15**), несколько `OkHttpClient` (ADR-008 → **заменено ADR-VL-15**), Prometheus (ADR-VL-06), Redis-сессии → Postgres `session_message` с TTL 15 мин (ADR-VL-02), `forceSource` (ADR-VL-03), обход anti-bot (ADR-VL-12).
+Здесь зафиксированы контракты нижнего уровня: какие пакеты/классы/интерфейсы строить, какие REST-эндпоинты и JSON-структуры, как устроены гейтвеи, планировщики, обработчики, система исключений и перехват, сообщения ошибок, порядок вызова источников и целостность данных.
 
 ## 1. Рамки и допущения
 
@@ -22,20 +22,20 @@
 
 ### Чего нет — строим
 
-LLM-агент (**агентный цикл с OpenRouter**: выбор инструментов LLM → параллельный вызов → ответ; `Refiner`/`Search*Tool` как таковые не делаем), унифицированная модель оффера, гейтвеи-адаптеры, ~~circuit breaker~~ (ADR-VL-04 — отменён), кэш, очередь, сессии, планировщики, `RestControllerAdvice`-перехват, метрики/алерты, web-слой, request-id, health.
+LLM-агент (**агентный цикл с OpenRouter**: выбор инструментов LLM → **последовательный** вызов источников → ответ, ADR-VL-15; `Refiner`/`Search*Tool` как таковые не делаем), унифицированная модель оффера, гейтвеи-адаптеры, ~~circuit breaker~~ (ADR-VL-04 — отменён), кэш, ~~очередь~~ (ADR-VL-15 — отменена), сессии, планировщики, `RestControllerAdvice`-перехват, метрики/алерты, web-слой, request-id, health.
 
 ### Стек (зафиксирован в `pom.xml`)
 
-Java 21 (виртуальные потоки), Spring Boot 4.1.1 (`starter-web`, `starter-validation`), OkHttp 5.5.0, Jsoup 1.17.2, Jackson 3 (`tools.jackson`), Lombok.
+Java 21 (платформенные потоки, виртуальные — отменены ADR-VL-15), Spring Boot 4.1.1 (`starter-web`, `starter-validation`), OkHttp 5.5.0, Jsoup 1.17.2, Jackson 3 (`tools.jackson`), Lombok.
 
 ## 2. Контракты высокого уровня
 
 1. **Изоляция**: источник никогда не пробрасывает исключение наружу из инструмента — всегда `PrincipalResult` (успех/ошибка/partial/timeout).
-2. **Параллельность fan-out/fan-in**: N источников выполняются параллельно, сборка дожидается **всех** (каждый ограничен своим per-source таймаутом) — общего `deadline` и отмены нет (ADR-VL-09, ПРОТ-01/02).
+2. **[ВЛ] Синхронный вызов источников (ADR-VL-15)**: N источников вызываются **последовательно**, в порядке от LLM; каждый доводится до конца (ограничен таймаутом клиента), упавший не отменяет остальные и попадает в `warnings`. Общего `deadline` и отмены нет (ADR-VL-09, ПРОТ-01/02).
 3. **Целостность**: после сборки результаты immutable; дедупликация по глобальному `offerId`. ~~сессия атомарна (ветка refine мержится)~~ — **[ОТМЕНЕНО]** (ADR-VL-03): сессия = история реплик в `session_message`.
 4. **Перехват**: все исключения проходят через единый `GlobalExceptionHandler`; `ErrorCode` однозначно маппится в (HTTP-статус, пользовательское сообщение, метрика).
 5. **request-id** пробивается от HTTP-запроса через MDC в логи каждого источника.
-6. **Приоритет флагов**: ~~`circuit > enabled > queue`~~ → **[ОТМЕНЕНО]**: circuit нет; порядок `draining` → `enabled` → `queue` (ADR-VL-04/021).
+6. **Приоритет флагов**: ~~`circuit > enabled > queue`~~ → **[ОТМЕНЕНО]**: circuit нет; очередь отменена (ADR-VL-15); остаётся порядок `draining` → `enabled` (ADR-VL-04/021).
 
 ## 3. Целевая структура пакетов
 
@@ -66,7 +66,7 @@ com.workspace.storm.event
 │   └── SearchHotelsTool.java
 ├── orchestration/
 │   ├── SearchOrchestrator.java       (воркфлоу промпт→ответ)
-│   ├── ParallelExecutor.java         (fan-out/fan-in, await-all, per-source таймауты)
+│   ├── SourceExecutor.java           (последовательный вызов источников, таймауты общего клиента; ADR-VL-15)
 │   ├── ResultCollector.java
 │   ├── Combiner.java
 │   └── Ranker.java
@@ -85,8 +85,7 @@ com.workspace.storm.event
 │   ├── CacheManager.java, CachedResult<T>
 ├── session/
 │   ├── SessionStore.java, Session, SessionProperties, SessionMessageRepository (ADR-VL-02)
-├── queue/
-│   ├── RequestQueue.java, RequestTask, QueueProperties, BackpressurePolicy
+├── ~~queue/~~   [ОТМЕНЕНО] RequestQueue/RequestTask/QueueProperties/BackpressurePolicy (ADR-VL-15 — очереди нет)
 ├── scheduler/
 │   ├── WarmupScheduler.java, CacheRefreshScheduler.java, SessionHousekeeper.java
 │   ├── ~~CircuitScheduler.java~~   [ОТМЕНЕНО] (ADR-VL-04)
@@ -115,7 +114,7 @@ com.workspace.storm.event
 | `POST /api/v1/sources/{name}/disable` | — | `SourceStatus` | Ручное выключение (drain) — за `X-Api-Key` (ADR-VL-10) |
 | `GET /api/v1/health/ready` | — | `{status, deps}` | Readiness |
 | `GET /api/v1/health/live` | — | `{status}` | Liveness |
-| `GET /api/v1/diagnostics/**` | — | — | Диагностика источников/очереди — за `X-Api-Key` (ADR-VL-10) |
+| `GET /api/v1/diagnostics/**` | — | — | Диагностика источников — за `X-Api-Key` (ADR-VL-10); ~~диагностика очереди~~ — **[ОТМЕНЕНО]** ADR-VL-15 |
 
 [ВЛ] Ответ агента — **обычный текст** (`text/plain`), поэтому `requestId` наружу не отдаём, но всегда пишем в MDC/логи (ADR-VL-01). Валидация входа — jakarta (`@NotBlank`), как в существующих DTO. ~~Все ответы содержат `requestId` (JSON)~~ → **[ОТМЕНЕНО]** вместе с JSON-контрактом.
 
@@ -125,7 +124,7 @@ com.workspace.storm.event
 - тело: `{ "sessionId": "опционально", "text": "Минск — Брест на 15 июня" }`;
 - ответ: `200`, `Content-Type: text/plain`, тело — текст ответа агента (упоминает в том числе упавшие источники);
 - `sessionId` создаётся при первом обращении, TTL **15 мин** с последнего обращения (ADR-VL-02);
-- переполнение очереди: `503` + `Retry-After: 5` (ADR-VL-05);
+~~переполнение очереди: `503` + `Retry-After: 5`~~ — **[ОТМЕНЕНО]** ADR-VL-15: очереди нет, такой ошибки не бывает;
 - ошибки источников **не** превращаются в HTTP-ошибку — они в тексте (ADR-011).
 
 Ниже — старый JSON-контракт, оставленный как справочный материал:
@@ -218,9 +217,9 @@ com.workspace.storm.event
 }
 ```
 
-Коды ошибок (`ErrorCode`): `BAD_REQUEST, VALIDATION_FAILED, INTENT_NOT_RECOGNIZED, CLARIFICATION_REQUIRED, SOURCE_UNAVAILABLE, SOURCE_TIMEOUT, SOURCE_AUTHORIZATION, SOURCE_RATE_LIMITED, SOURCE_PARSE_ERROR, CIRCUIT_OPEN, ALL_SOURCES_UNAVAILABLE, LLM_UNAVAILABLE, SESSION_EXPIRED, QUEUE_REJECTED, TOO_MANY_REQUESTS, INTERNAL_ERROR`.
+Коды ошибок (`ErrorCode`): `BAD_REQUEST, VALIDATION_FAILED, INTENT_NOT_RECOGNIZED, CLARIFICATION_REQUIRED, SOURCE_UNAVAILABLE, SOURCE_TIMEOUT, SOURCE_AUTHORIZATION, SOURCE_RATE_LIMITED, SOURCE_PARSE_ERROR, CIRCUIT_OPEN, ALL_SOURCES_UNAVAILABLE, LLM_UNAVAILABLE, SESSION_EXPIRED, QUEUE_REJECTED, TOO_MANY_REQUESTS, INTERNAL_ERROR`. [ВЛ] `CIRCUIT_OPEN` и `QUEUE_REJECTED` остаются в enum, но **не выдаются** (ADR-VL-04, ADR-VL-15).
 
-Важно: HTTP-статус ошибки **частичного/пустого источника — 200** (`partial=true` и список предупреждений), т.к. сессия не падает. 4xx/5xx наружу уходят только для `BAD_REQUEST`, `QUEUE_REJECTED(503)`, `TOO_MANY_REQUESTS(429)`, `INTERNAL_ERROR(500)`, `SESSION_EXPIRED(409)`.
+Важно: HTTP-статус ошибки **частичного/пустого источника — 200** (`partial=true` и список предупреждений), т.к. сессия не падает. 4xx/5xx наружу уходят только для `BAD_REQUEST`, `TOO_MANY_REQUESTS(429)`, `INTERNAL_ERROR(500)`, `SESSION_EXPIRED(409)`. ~~`QUEUE_REJECTED(503)`~~ — **[ОТМЕНЕНО]** ADR-VL-15.
 
 ### 4.4 Унифицированная модель оффера
 
@@ -301,7 +300,7 @@ public interface HotelGateway extends SourceGateway {
 
 Отвечает за: цену (копейки BZD ÷100, диапазон → min, строка → `BigDecimal`, валюта по умолчанию BYN), время (12h/24h, локаль, TZ Europe/Minsk), null-обязательные поля → элемент отбрасывается, дедуп-ключ, `Price` с исходной и нормализованной валютой.
 
-## 6. Оркестрация: инструменты и параллельность
+## 6. Оркестрация: инструменты и последовательный вызов источников
 
 ### 6.1 Инструменты
 
@@ -311,7 +310,7 @@ public class SearchBusesTool {
     public ToolResult search(SearchIntent intent) {
         // список гейтвеев: atlasbus, ticketbus
         // [ВЛ] forceSource и budget на источник — ОТМЕНЕНО (ADR-VL-03): инструменты выбирает LLM,
-        // все выбранные источники выполняются параллельно и fan-in ждёт ВСЕХ (ADR-VL-09)
+        // выбранные источники вызываются ПОСЛЕДОВАТЕЛЬНО, каждый доводится до конца (ADR-VL-15)
         // PrincipalResult по каждому → ToolResult { offers, warnings }
     }
 }
@@ -328,21 +327,21 @@ public record ToolResult(
         long durationMs) {}
 ```
 
-### 6.2 Контракт параллельных запросов (ParallelExecutor)
+### 6.2 Контракт вызова источников (SourceExecutor)
 
-- **Fan-out**: на каждый sourceJob (гейтвей + параметры) создаётся задача; выполняется на виртуальном потоке (`Thread.ofVirtual().name("src-<source>", 0).start()`); у каждого источника **свой таймаут** из `OkHttpProperties` (per-source оверрайды через `newBuilder()`, ADR-014).
-- **Per-source лимиты**: connect 5s, read 10s (bzd/ticketbus: 60s для тяжёлых POST), SSE read 10s + max duration 30s, callTimeout — **явно, покомпонентно, без `0` (= бесконечный)**.
-- **Fan-in** [ВЛ]: `CompletableFuture.allOf(...).join()` — **ждём ВСЕ источники**; каждый уже ограничен своим таймаутом, поэтому hang невозможен. Общего `deadline` нет, отмены нет (ADR-VL-09, ПРОТ-01/02). `deadlineMs` из запроса, если передан, — **advisory**: пишем в лог/метрику, но не обрываем fan-in.
+- **[ВЛ] Синхронно, в текущем потоке** (ADR-VL-15): список `SourceCall` обходится по порядку, каждый вызов выполняется в том же потоке, что и HTTP-запрос. Виртуальных потоков, `ExecutorService` и `CompletableFuture` нет (ADR-009 заменён).
+- **Таймауты**: **один** `OkHttpClient` на всё приложение, один набор таймаутов из `OkHttpProperties`: connect 5s, read 10s, `callTimeout` — **явно, без `0` (= бесконечный)**. ~~per-source оверрайды через `newBuilder()`, SSE-пул~~ — **ОТМЕНЕНО** (ADR-008 заменён).
+- **Доводим до конца** [ВЛ]: каждый источник вызывается до таймаута или успеха; упавший не отменяет остальные и не теряет уже собранное. Общего `deadline` нет, отмены нет (ADR-VL-09, ПРОТ-01/02). `deadlineMs` из запроса, если передан, — **advisory**: пишем в лог/метрику, но ничего не обрываем.
 - **Один источник — одно исключение**: гейтвей сам ловит всё и превращает в `PrincipalResult` (включая таймаут); наружу утекает только `InterruptedException` при shutdown.
-- **Skip** [ВЛ]: если `draining=true` или `enabled=false` — задача **не стартуется**, результат `SKIPPED`, метрика `source.skipped`. ~~`circuit OPEN`~~ — **ОТМЕНЕНО** (ADR-VL-04).
-- **Порядок** [ВЛ]: результаты в порядке завершения; приоритетов и сортировки по `priority()` нет (ADR-VL-05).
+- **Skip** [ВЛ]: если `draining=true` или `enabled=false` — вызов **не делается**, результат `SKIPPED`, метрика `source.skipped`. ~~`circuit OPEN`~~ — **ОТМЕНЕНО** (ADR-VL-04).
+- **Порядок** [ВЛ]: результаты **в порядке вызова**; приоритетов и сортировки по `priority()` нет (ADR-VL-05/ADR-VL-15).
+- **Цена решения**: худший случай ответа = сумма таймаутов источников подряд. Поэтому таймауты короткие, а результаты кэшируются (TTL 5 мин).
 
 ```java
-public class ParallelExecutor {
-    <T> List<PrincipalResult<T>> fanOut(List<SourceCall<T>> calls);
-    // вызывает каждый SourceCall в отдельном виртуальном потоке,
-    // ждёт ВСЕХ (allOf + join), каждый источник ограничен своим таймаутом;
-    // отмены и общего deadline нет; порядок = порядок завершения
+public class SourceExecutor {
+    <T> List<PrincipalResult<T>> execute(List<SourceCall<T>> calls);
+    // последовательно, в текущем потоке; каждый источник ограничен таймаутом клиента;
+    // отмены и общего deadline нет; порядок = порядок вызова
 }
 ```
 
@@ -381,14 +380,14 @@ StormException (abstract)                         — несёт ErrorCode error
 | 503 + Retry-After | `ClientException` + retryAfter | `SOURCE_UNAVAILABLE` | 200 | источник временно недоступен |
 | 504 / read/write timeout / SSE-завис | `ClientException(timeout)` | `SOURCE_TIMEOUT` | 200 | источник долго не отвечает |
 | 429 | `ClientException` + retryAfter>5s | `SOURCE_RATE_LIMITED` | 200 | источник временно недоступен |
-| 403 / капча | `ClientException` | `CIRCUIT_OPEN` (эффект: breaker) | 200 | источник временно недоступен |
+| 403 / капча | `ClientException` | `SOURCE_AUTHORIZATION` | 200 | источник временно недоступен (breaker не открываем, ADR-VL-04) |
 | 401 после warmup | retry warmup → fail | `SOURCE_AUTHORIZATION` | 200 | источник недоступен (сессия) |
 | 404 / редирект домена | `ClientException` | `SOURCE_UNAVAILABLE` + metric/alert | 200 | источник недоступен |
 | смена формата / 0 элементов | `ParseException` | `SOURCE_PARSE_ERROR` + alert | 200 | не удалось получить данные |
 | Promise «все источники лежат» | нет данных вовсе | `ALL_SOURCES_UNAVAILABLE` | 200 | Сервис временно недоступен |
 | LLM не смог | `LlmException` | `INTENT_NOT_RECOGNIZED` / `LLM_UNAVAILABLE` | 200 | Не могу разобрать запрос, попробуйте позже |
 | невалидный запрос | validation | `BAD_REQUEST` | 400 | сообщение валидатора |
-| очередь переполнена | `queue.reject` | `QUEUE_REJECTED` | 503 | Сервис перегружен, подождите |
+| ~~очередь переполнена~~ | ~~`queue.reject`~~ | ~~`QUEUE_REJECTED`~~ | ~~503~~ | **[ОТМЕНЕНО]** ADR-VL-15: очереди нет |
 | сессия протухла | — | `SESSION_EXPIRED` | 409 | Сессия истекла, начните заново |
 | нераспознанный интент | `Validator` | `CLARIFICATION_REQUIRED` | 200 | Уточните город/дату |
 | внутренняя ошибка | утечка | `INTERNAL_ERROR` | 500 | Внутренняя ошибка, попробуйте позже |
@@ -427,7 +426,6 @@ hotel.not_found_near=Отелей рядом не нашлось
 dates.required=Уточните даты поездки
 where.clarify=Где именно?
 session.expired=Сессия истекла, начните заново
-queue.rejected=Сервис перегружен, подождите
 llm.unavailable=Не могу разобрать запрос, попробуйте позже
 internal.error=Внутренняя ошибка, попробуйте позже
 disclaimer.payment=Оплата производится на сайте источника; карты некоторых стран могут не приниматься
@@ -446,9 +444,9 @@ disclaimer.visa=Проверьте визовые требования зара�
 | ~~`CircuitScheduler`~~ | — | **[ОТМЕНЕНО]** (ADR-VL-04): переходов OPEN/HALF_OPEN нет |
 | `CacheRefreshScheduler` | 5 мин | обновляет справочники городов (suggest) и тёплый кэш результатов (АНП-95, АНП-113) |
 | `SessionHousekeeper` | 1 мин | [ВЛ] вычищает истёкшие сессии (**TTL 15 мин** с последнего обращения, ADR-VL-02), каскадом удаляет `session_message` |
-| `QueueMonitor` | 1 сек | метрика длины очереди; если `length > highWaterMark` — `queue.reject=true`; backpressure |
+| ~~`QueueMonitor`~~ | — | **[ОТМЕНЕНО]** (ADR-VL-15): очереди нет, мониторить нечего |
 
-Порядок старта: очередь → кэш → warmup ~~→ circuit~~ (circuit нет, ADR-VL-04).
+Порядок старта: кэш → warmup ~~→ circuit~~ ~~→ очередь~~ (circuit нет — ADR-VL-04, очереди нет — ADR-VL-15).
 
 ## 10. ~~Circuit breaker (детали реализации)~~ — ОТМЕНЕНО (ADR-VL-04, ПРОТ-17)
 
@@ -499,13 +497,9 @@ public record SessionMessage(long id, String sessionId, String role, String text
 - `state ∈ {NEW, ACTIVE, EXPIRED}`; **`CANCELLED` не делаем** — отмены нет (ADR-VL-09);
 - ~~`Refiner` мержит `intent`/`steps`~~ — **[ОТМЕНЕНО]** (ADR-VL-03): уточнения приходят репликами, LLM выбирает инструменты сам.
 
-## 12. Очередь
+## 12. ~~Очередь~~ — ОТМЕНЕНО (ADR-VL-15)
 
-`RequestQueue` — bounded `ArrayBlockingQueue<RequestTask>` (лимит из `QueueProperties`, default 100).
-- [ВЛ] **FIFO, без приоритетов и aging**; порядок задаёт очередь, а не сортировка (ADR-VL-05, ПРОТ-05). ~~`priority` в `SearchRequest`~~ — **ОТМЕНЕНО**, такого поля в MVP нет;
-- backpressure: при заполнении (`ArrayBlockingQueue(100)`) → `QUEUE_REJECTED` **503 + `Retry-After: 5`** (АНП-109, ADR-VL-05);
-- дедупликация в очереди по `requestId` (повторный запрос сливается);
-- consumer pool: 4–8 потоков, каждый берет `RequestTask` → `SearchOrchestrator.process`.
+`RequestQueue` (`ArrayBlockingQueue(100)`), `RequestTask`, `QueueProperties`, `BackpressurePolicy`, consumer pool 4–8, дедупликация по `requestId` в очереди, `QUEUE_REJECTED` (503) и `Retry-After` — **в MVP не реализуются**. Запрос обрабатывается в потоке HTTP-запроса: контроллер → `SearchOrchestrator` → инструменты **последовательно** → ответ. Backpressure обеспечивает сам Tomcat числом потоков; дедупликация `requestId` делает таблица `idempotency` (ADR-001), аудит — `request_log`.
 
 ## 13. Метрики, алерты, health, логи
 
@@ -513,17 +507,17 @@ public record SessionMessage(long id, String sessionId, String role, String text
   - `source.errors{source, code}` — на каждую ошибку источника;
   - `source.latency{source}_ms{histogram}`; `source.skipped{source}`;
   - ~~`source.circuit{source}=open`~~ — **[ОТМЕНЕНО]** (ADR-VL-04/022); имена метрик — по словарю в `25_contradictions.md` (ПРОТ-20);
-  - `parse.errors{source}`; `all.sources.disabled`; `queue.length`, `queue.rejected`;
+  - `parse.errors{source}`; `all.sources.disabled`; ~~`queue.length`, `queue.rejected`~~ — **[ОТМЕНЕНО]** (ADR-VL-15: очереди нет);
   - `session.active`, `llm.errors{code}`.
 - `AlertEvaluator` — локальные пороги (без Prometheus, чтобы не добавлять зависимость): `parse.errors > 10/мин` → лог WARN + webhook-заглушка; 404/редирект домена → alert «обновить Constants»; SSL → alert «проверить сертификат»; капча → alert «анти-бот».
-- Health: `ready` проверяет queue не переполнена и не «все источники отключены»; `live` — только JVM.
+- Health: `ready` проверяет БД и «все источники отключены/недоступны»; `live` — только JVM. ~~проверку очереди~~ — **[ОТМЕНЕНО]** (ADR-VL-15).
 - Логи: MDC `requestId`, `source`, `code`, `status`; сообщение = тип исключения + URL + HTTP-код + partial/timeout-флаги.
 
 ## 14. Контракты целостности
 
-1. **Идемпотентность**: `requestId` уникален на (пользователь, короткое окно); повторный `requestId` не попадает в очередь второй раз. ~~возвращает тот же `SearchResponse`~~ — **[ОТМЕНЕНО]** (ADR-VL-01): ответ — текст, повтор отдаётся из кэша/очереди.
+1. **Идемпотентность**: `requestId` уникален на (пользователь, короткое окно); повторный `requestId` обрабатывается один раз — гарантирует таблица `idempotency` (`INSERT … ON CONFLICT DO NOTHING`, ADR-001). ~~не попадает в очередь второй раз~~ — **[ОТМЕНЕНО]** (ADR-VL-15). ~~возвращает тот же `SearchResponse`~~ — **[ОТМЕНЕНО]** (ADR-VL-01): ответ — текст, повтор отдаётся из кэша.
 2. **Атомарность сессии**: [ВЛ] реплики сессии пишутся последовательно в `session_message`; отдельных refine-веток нет (ADR-VL-01/019).
-3. **Завершённость параллельности**: [ВЛ] `ParallelExecutor` ждёт **все** задачи; «зависший» вызов невозможен — каждый источник ограничен per-source таймаутом. Отмены и принудительного закрытия потоков нет (ADR-VL-09, ADR-013).
+3. **Завершённость обхода источников**: [ВЛ] `SourceExecutor` последовательно доводит **каждый** источник до результата или таймаута; «зависший» вызов невозможен — ограничение задаёт таймаут клиента. Отмены и дочерних потоков нет (ADR-VL-09, ADR-VL-15).
 4. **Валидность оффера**: ни один `Offer` с `null` в обязательных полях (domain, from, to, departure, price) не попадает в ответ — режет `OfferNormalizer`.
 5. **Дедупликация** single-pass: на входе (парсер) по `rideId`, на выходе (Combiner) по нормализованному `offerId`.
 6. **Валютная целостность**: цена сравнивается только в BYN; если валюта неизвестна — оффер помечается `attributes.currencyKnown=false` и не участвует в сортировке по цене.
@@ -535,17 +529,17 @@ public record SessionMessage(long id, String sessionId, String role, String text
 
 | Фаза | Делаем | Выход |
 |---|---|---|
-| **0. Каркас** | пулы (scheduler, virtual threads), `RequestIdFilter`, `GlobalExceptionHandler`, `ErrorCode`, гербарий `ErrorResponse` | web-бейз, health, тест ошибок |
+| **0. Каркас** | пул планировщика (без virtual threads — ADR-VL-15), `RequestIdFilter`, `GlobalExceptionHandler`, `ErrorCode`, гербарий `ErrorResponse` | web-бейз, health, тест ошибок |
 | **1. Исключения** | новая иерархия поверх существующих `*Client/ServiceException`, `ParseException`, карта маппинга | unit-тесты карты, advise-тесты |
 | **2. Unified-модель + Normalizer** | `Offer`, `Price`, `GeoPoint`, мапперы с 5 парсеров | unit-тесты нормализации (копейки, валюты, null, диапазоны) |
 | **3. Гейтвеи** | 5 адаптеров поверх существующих клиентов | unit (mock клиента) + интеграция по живому источнику |
 | **4. ~~Circuit + Registry~~** | **[ОТМЕНЕНО]** (ADR-VL-04) — вместо: per-source таймауты, `source.errors`+алерты, `enabled`/`draining` | unit `SourceErrorCountTest` (retry = 1 ошибка) |
-| **5. ParallelExecutor + Collector** | fan-out/in, **await-all без дедлайна и отмены**, порядок по завершению | unit-тесты per-source таймаутов и частичных результатов |
+| **5. SourceExecutor + Collector** | последовательный вызов источников, **каждый доводится до конца, без дедлайна и отмены**, порядок вызова | unit-тесты таймаутов клиента и частичных результатов |
 | **6. Tools** | [ВЛ] инструменты-LLM по одному на источник (`search_atlasbus`, `search_ticketbus`, `search_bzd`, `search_ticketpro`, `search_belhotel`, `get_offers`) + ToolResult | тесты: «один источник лежит — второй отдаёт, упавший упомянут в тексте» |
 | **7. Combiner + Ranker** | дедуп, комбо, бюджет, сортировка, «отель рядом» | unit-тесты склейки (1–4 домена) |
 | **8. LLM-гейт + агентный цикл** | `LlmGateway` (OpenRouter, function calling), `AgentLoop` (maxToolRounds из настроек), `RuleBasedFallback` без ключа | тест агентного цикла на моке LLM, тест фолбэка (АНП-100) |
 | **9. Оркестрация + Web** | `SearchOrchestrator`, `AgentController` (`POST /api/v1/agent/chat` → `text/plain`), `SourcesAdminController` (`X-Api-Key`) | интеграционные тесты API (happy+unhappy) |
-| **10. Очередь, сессии, кэш** | `RequestQueue` (FIFO 100), `SessionStore`/`session_message` (Postgres, TTL 15 мин), `CacheManager` (+ housekeepers) | тесты TTL, backpressure (503+Retry-After), дедупа, сессий |
+| **10. ~~Очередь~~, сессии, кэш** | `SessionStore`/`session_message` (Postgres, TTL 15 мин), `CacheManager` (+ housekeepers); очереди нет (ADR-VL-15) | тесты TTL и сессий; ~~backpressure, дедуп в очереди~~ — **[ОТМЕНЕНО]** |
 | **11. Метрики, алерты, логи** | `MetricsCollector`, `AlertEvaluator`, MDC-логи | проверка метрик на каждой ошибке каталога |
 | **12. Е2Е** | сквозные сценарии по happy/unhappy, каталог 1–235 | отчёт покрытия каталога |
 
@@ -557,7 +551,7 @@ public record SessionMessage(long id, String sessionId, String role, String text
 2. Файлы: создать пустые каркасы (интерфейс + заглушка), подключить в Spring (bean-граф).
 3. Реализация happy-пути `U` (по выбранному объёму).
 4. Обработка каждого unhappy-кода из каталога 1–235, относящегося к `U` (исключение → `ErrorCode` → сообщение → метрика → alert).
-5. Конфиги: `application.properties` (`QueueProperties`, `SessionProperties`, `SourceProperties` (таймауты), `LlmProperties`/`AgentProperties`). ~~`CircuitPolicy`~~ — **[ОТМЕНЕНО]** (ADR-VL-04).
+5. Конфиги: `application.properties` (`SessionProperties`, `OkHttpProperties` (таймауты клиента), `LlmProperties`/`AgentProperties`). ~~`QueueProperties`~~ — **[ОТМЕНЕНО]** (ADR-VL-15). ~~`CircuitPolicy`~~ — **[ОТМЕНЕНО]** (ADR-VL-04).
 6. Юнит-тесты: happy, каждый happy-вариант, каждое исключение, таймауты, null, дедуп.
 7. Интеграционные тесты (mock OkHttp `MockWebServer` — добавить в тесты; live-интеграции уже есть).
 8. Тесты контрактов API (JSON фикстуры) + тесты сообщений (i18n).

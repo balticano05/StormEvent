@@ -1,14 +1,14 @@
 # Анхэппи пути 39–45: Инфраструктура и конфигурация
 
-OkHttp, виртуальные потоки, Jackson, docker-compose, мониторинг, Constants.
+OkHttp, docker-compose, мониторинг, Constants. ~~Виртуальные потоки~~ — **[ОТМЕНЕНО]** (ADR-VL-15), вызовы источников последовательные.
 
 ### АНП-39. OkHttp pool исчерпан
-5 соединений заняты, шестой запрос ждёт в очереди. По таймауту — `ConnectionPoolTimeoutException`.
+5 соединений заняты, шестой запрос ждёт в очереди **пула соединений OkHttp** (это не наша очередь, её настройка — ADR-015). По таймауту — `ConnectionPoolTimeoutException`. Вызовы источников идут последовательно (ADR-VL-15), пул один.
 Tool логирует, возвращает пустой.
 
-### АНП-40. Виртуальные потоки не включены
-`spring.threads.virtual.enabled=false`. Параллельные вызовы идут на платформенных потоках.
-Всё работает, но медленнее. Лог-warning при старте.
+### ~~АНП-40. Виртуальные потоки не включены~~ — **[ОТМЕНЕНО]** (ADR-VL-15)
+~~`spring.threads.virtual.enabled=false`. Параллельные вызовы идут на платформенных потоках.~~
+[ВЛ] Виртуальных потоков в проекте нет: ни `spring.threads.virtual.enabled`, ни `newVirtualThreadPerTaskExecutor()`. Источники вызываются последовательно в потоке HTTP-запроса.
 
 ### АНП-41. Jackson 3 vs Jackson 2 аннотации
 `AtlasRide` импортирует `com.fasterxml.jackson.annotation.JsonProperty` (Jackson 2), но парсер
