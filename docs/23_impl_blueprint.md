@@ -368,11 +368,13 @@ call.timeout().timeout(remaining, TimeUnit.MILLISECONDS);   // пер-вызов
 return gateway.execute(call);
 ```
 
+> **robots.txt (ADR-VL-17):** проверка 5 источников (`atlasbus.by`, `pass.rw.by`, `ticketbus.by`, `www.ticketpro.by`, `belhotel.by`) показала: `Crawl-delay` нигде нет; нужные эндпоинты формально под `Disallow` (BZD `/ajax/*`, TicketPro `*?page=*`, BelHotel `*?calendar=detail*`). Владелец решил: **robots.txt не используется как гейт** — все 5 источников работают. Анти-бот обход не делаем (ADR-VL-11). Нагрузка ограничена бюджетом 40/60 с (ADR-VL-16) и кэшем TTL 5 мин; rate-limiter'ы — отложено.
+
 ### 6.3 Combiner и Ranker
 
 - `Combiner`: склейка доменов (BUS+EVENT+HOTEL, roundTrip, multi-direction), фильтр по бюджету, дедупликация по `Offer.id`, расчёт `ComboOffer` (суммы, дистанции, «отель рядом с venue» по координатам ≤1 км).
 - `Ranker`: сортировка по `intent.prefs.sort` (`CHEAPEST|FASTEST|BEST`), top-N = `maxOffers`.
-- Нормализация валют для сравнения: BYN как базовая (котировки в Constants), пометка `currency.unknown`.
+- **Валюта (ADR-017):** цена хранится как вернул источник (`amount numeric(12,2)` + `currency char(3)`). Нормализатор проверяет `currency == 'BYN'` — не-BYN отбрасывается с `SOURCE_ERROR` + предупреждение пользователю. Сортировка по цене работает только внутри BYN (у нас всегда BYN). Конвертации нет, провайдеров курсов нет.
 
 ## 7. Система исключений и перехват
 
@@ -545,7 +547,7 @@ public record SessionMessage(long id, String sessionId, String role, String text
 3. **Завершённость обхода источников**: [ВЛ] `SourceExecutor` последовательно доводит **каждый начатый** вызов до результата или таймаута; «зависший» вызов невозможен — ограничение задаёт таймаут вызова (остаток бюджета, [ADR-VL-16](decisions.md#adr-vl-16)). Отмены и дочерних потоков нет (ADR-VL-09, ADR-VL-15). Источник, которому остатка не хватило, **пропускается** (`SKIPPED_NO_BUDGET`), а не обрывается на середине.
 4. **Валидность оффера**: ни один `Offer` с `null` в обязательных полях (domain, from, to, departure, price) не попадает в ответ — режет `OfferNormalizer`.
 5. **Дедупликация** single-pass: на входе (парсер) по `rideId`, на выходе (Combiner) по нормализованному `offerId`.
-6. **Валютная целостность**: цена сравнивается только в BYN; если валюта неизвестна — оффер помечается `attributes.currencyKnown=false` и не участвует в сортировке по цене.
+6. **Валютная целостность (ADR-017)**: цена хранится как вернул API (`amount` + `currency`). Нормализатор требует `currency == 'BYN'`, иначе — `SOURCE_ERROR` + предупреждение, оффер не попадает в выдачу. Сортировка по цене — только внутри BYN (всегда BYN). Конвертации и провайдеров курсов нет.
 7. **Данные не теряются при partial**: `partial=true` идёт до пользователя вместе с собранным, а не превращается в пустоту. **Исключение** [ВЛ]: если сработал потолок 60 с — `REQUEST_TIMEOUT`/504 **без** собранного ([ADR-VL-16](decisions.md#adr-vl-16)).
 
 ## 15. Порядок реализации (фазы)
@@ -577,6 +579,7 @@ public record SessionMessage(long id, String sessionId, String role, String text
 3. Реализация happy-пути `U` (по выбранному объёму).
 4. Обработка каждого unhappy-кода из каталога 1–235, относящегося к `U` (исключение → `ErrorCode` → сообщение → метрика → alert).
 5. Конфиги: `application.properties` (`SessionProperties`, `OkHttpProperties` (таймауты клиента), `TimeoutProperties` (бюджет 40/60 с — ADR-VL-16), `LlmProperties`/`AgentProperties`). ~~`QueueProperties`~~ — **[ОТМЕНЕНО]** (ADR-VL-15). ~~`CircuitPolicy`~~ — **[ОТМЕНЕНО]** (ADR-VL-04).
+**Переменные окружения:** `.env` в корне проекта (в `.gitignore`), подключается через `spring.config.import=optional:file:.env[.properties]` в `application.properties`. Маппинг: `DB_URL/DB_USER/DB_PASSWORD` → `spring.datasource.*`, `OPENROUTER_API_KEY/MODEL` → `storm.llm.openrouter.*`, `STORM_ADMIN_KEY` → `storm.admin.apiKey`. Значения: пароли рандомные, `OPENROUTER_MODEL=` пусто (вписать при появлении ключа).
 6. Юнит-тесты: happy, каждый happy-вариант, каждое исключение, таймауты, null, дедуп.
 7. Интеграционные тесты (mock OkHttp `MockWebServer` — добавить в тесты; live-интеграции уже есть).
 8. Тесты контрактов API (JSON фикстуры) + тесты сообщений (i18n).

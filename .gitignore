@@ -30,3 +30,9 @@ replay_pid*
 
 # Build output
 **/target/
+
+# Environment files
+*.env
+.env.*
+!.env
+!.env.example
