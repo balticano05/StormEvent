@@ -21,9 +21,17 @@
 		<okhttp.version>5.5.0</okhttp.version>
 		<lombok.version>1.18.36</lombok.version>
 		<jsoup.version>1.17.2</jsoup.version>
+		<spotbugs.plugin.version>4.9.8.0</spotbugs.plugin.version>
+		<spotbugs.annotations.version>4.9.8</spotbugs.annotations.version>
 	</properties>
 
 	<dependencies>
+		<dependency>
+			<groupId>com.github.spotbugs</groupId>
+			<artifactId>spotbugs-annotations</artifactId>
+			<version>${spotbugs.annotations.version}</version>
+			<scope>provided</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
@@ -97,19 +105,47 @@
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<configuration>
-					<annotationProcessorPaths>
-						<path>
-							<groupId>org.projectlombok</groupId>
-							<artifactId>lombok</artifactId>
-							<version>${lombok.version}</version>
-						</path>
-					</annotationProcessorPaths>
-				</configuration>
-			</plugin>
-		</plugins>
+		<plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-compiler-plugin</artifactId>
+			<configuration>
+				<annotationProcessorPaths>
+					<path>
+						<groupId>org.projectlombok</groupId>
+						<artifactId>lombok</artifactId>
+						<version>${lombok.version}</version>
+					</path>
+				</annotationProcessorPaths>
+			</configuration>
+		</plugin>
+
+		<!--
+			Null-safety rule: fails `mvn verify` if any code path can dereference a null.
+			Detector set is restricted to the NP_*/RCN_* null patterns via
+			config/spotbugs-null.xml, so no unrelated SpotBugs noise is introduced.
+			Escape hatch for a reviewed false positive: @SuppressFBWarnings("NP_...")
+		-->
+		<plugin>
+			<groupId>com.github.spotbugs</groupId>
+			<artifactId>spotbugs-maven-plugin</artifactId>
+			<version>${spotbugs.plugin.version}</version>
+			<configuration>
+				<effort>Max</effort>
+				<threshold>Low</threshold>
+				<includeFilterFile>${project.basedir}/config/spotbugs-null.xml</includeFilterFile>
+				<failOnError>true</failOnError>
+				<xmlOutput>true</xmlOutput>
+			</configuration>
+			<executions>
+				<execution>
+					<id>spotbugs-null-safety</id>
+					<phase>verify</phase>
+					<goals>
+						<goal>check</goal>
+					</goals>
+				</execution>
+			</executions>
+		</plugin>
+	</plugins>
 	</build>
 </project>
