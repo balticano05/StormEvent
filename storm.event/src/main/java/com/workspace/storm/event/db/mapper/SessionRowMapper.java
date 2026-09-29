@@ -12,7 +12,7 @@ public class SessionRowMapper implements RowMapper<SessionEntity> {
     @Override
     public SessionEntity mapRow(ResultSet rs, int rowNum) throws SQLException {
         SessionEntity e = new SessionEntity();
-        e.setId(UUID.fromString(rs.getString("id")));
+        e.setId(rs.getObject("id", UUID.class));
         e.setIntent(rs.getString("intent"));
         e.setLastAccessAt(TimestampMapper.toInstant(rs.getTimestamp("last_access_at")));
         e.setCreatedAt(TimestampMapper.toInstant(rs.getTimestamp("created_at")));

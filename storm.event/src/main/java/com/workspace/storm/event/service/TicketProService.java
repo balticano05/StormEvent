@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -27,9 +28,9 @@ public class TicketProService {
 
         for (Category category : categories()) {
             if (category.hasSubcategories()) {
-                for (Category sub : category.subcategories()) {
-                    collectFromCategory(events, category.name() + " / " + sub.name(), sub.slug());
-                }
+                Optional.ofNullable(category.subcategories()).orElse(List.of())
+                        .forEach(sub -> collectFromCategory(
+                                events, category.name() + " / " + sub.name(), sub.slug()));
             } else {
                 collectFromCategory(events, category.name(), category.slug());
             }

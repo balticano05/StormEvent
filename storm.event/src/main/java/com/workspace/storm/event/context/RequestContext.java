@@ -2,6 +2,8 @@ package com.workspace.storm.event.context;
 
 import com.workspace.storm.event.config.TimeoutProperties;
 import java.time.Instant;
+import java.util.Objects;
+import java.util.Optional;
 
 public record RequestContext(
         String requestId,
@@ -12,14 +14,14 @@ public record RequestContext(
         Long advisoryDeadlineMs
 ) {
     public static RequestContext create(String requestId, TimeoutProperties timeoutProps, String lang, Long advisoryDeadlineMs) {
+        Objects.requireNonNull(timeoutProps, "timeoutProps must not be null");
         Instant now = Instant.now();
         long softBudget = timeoutProps.getSoftBudgetMs();
         long hardCeiling = timeoutProps.getHardCeilingMs();
 
-        long effectiveBudget = softBudget;
-        if (advisoryDeadlineMs != null && advisoryDeadlineMs > 0 && advisoryDeadlineMs < softBudget) {
-            effectiveBudget = advisoryDeadlineMs;
-        }
+        long effectiveBudget = Optional.ofNullable(advisoryDeadlineMs)
+                .filter(ms -> ms > 0 && ms < softBudget)
+                .orElse(softBudget);
 
         return new RequestContext(
                 requestId,

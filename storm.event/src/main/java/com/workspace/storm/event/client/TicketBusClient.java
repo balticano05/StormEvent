@@ -16,7 +16,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import okhttp3.ResponseBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -82,11 +81,15 @@ public class TicketBusClient {
                 .addQueryParameter("limit", String.valueOf(STATION_LIMIT))
                 .addQueryParameter("timestamp", String.valueOf(System.currentTimeMillis()))
                 .addQueryParameter("selectcity", fromCity ? "1" : "0")
-                .addQueryParameter("station_id1", originId)
+                .addQueryParameter("station_id1", originIdOf(originId))
                 .addQueryParameter("path", "station")
                 .build();
 
         return stationParser.parse(execute(get(url)));
+    }
+
+    private String originIdOf(String originId) {
+        return Optional.ofNullable(originId).map(String::trim).filter(s -> !s.isEmpty()).orElse("");
     }
 
     public List<TbRace> searchRaces(TicketBusSearchRequest req) {
@@ -144,15 +147,18 @@ public class TicketBusClient {
         if (!isAccessDenied(html)) {
             return html;
         }
-        log.warn("TicketBus access denied for {}; renewing session", url.queryParameter("prog"));
+        Optional<String> prog = Optional.ofNullable(url.queryParameter("prog"));
+        log.warn("TicketBus access denied for {}; renewing session", prog.orElse("<unknown>"));
         dropSession();
-        return execute(new Request.Builder().url(withSession(url.queryParameter("prog"))).post(body).build());
+        return prog.map(this::withSession)
+                .map(renewed -> execute(new Request.Builder().url(renewed).post(body).build()))
+                .orElseThrow(() -> new TicketBusClientException("TicketBus URL carries no 'prog' parameter: " + url));
     }
 
-    private void refreshSession() {
+    private void refreshSession(String currentSessionId) {
         HttpUrl url = dataUrl("getsession1");
         RequestBody body = new FormBody.Builder()
-                .add("PHPSESSID", sessionId.get())
+                .add("PHPSESSID", currentSessionId)
                 .build();
         String response = execute(new Request.Builder().url(url).post(body).build());
         Matcher m = SESSION_PATTERN.matcher(response);
@@ -163,11 +169,9 @@ public class TicketBusClient {
 
     private String session() {
         warmup();
-        String sid = sessionId.get();
-        if (sid == null || sid.isBlank()) {
-            throw new TicketBusClientException("No TicketBus session available");
-        }
-        return sid;
+        return Optional.ofNullable(sessionId.get())
+                .filter(s -> !s.isBlank())
+                .orElseThrow(() -> new TicketBusClientException("No TicketBus session available"));
     }
 
     private void warmup() {
@@ -183,8 +187,9 @@ public class TicketBusClient {
             if (!m.find()) {
                 throw new TicketBusClientException("No PHPSESSID found in TicketBus homepage");
             }
-            sessionId.set(m.group(1));
-            refreshSession();
+            String sid = m.group(1);
+            sessionId.set(sid);
+            refreshSession(sid);
             warmed = true;
         }
     }
@@ -194,9 +199,13 @@ public class TicketBusClient {
         sessionId.set(null);
     }
 
+    private String currentSessionIdOrEmpty() {
+        return Optional.ofNullable(sessionId.get()).orElse("");
+    }
+
     private HttpUrl dataUrl(String prog) {
         return baseBuilder()
-                .addQueryParameter("PHPSESSID", sessionId.get() == null ? "" : sessionId.get())
+                .addQueryParameter("PHPSESSID", currentSessionIdOrEmpty())
                 .addQueryParameter("prog", prog)
                 .addQueryParameter("host", HOST_ID)
                 .build();
@@ -221,11 +230,7 @@ public class TicketBusClient {
             if (!response.isSuccessful()) {
                 throw new TicketBusClientException("TicketBus returned HTTP " + response.code() + " for " + request.url());
             }
-            ResponseBody body = response.body();
-            if (body == null) {
-                throw new TicketBusClientException("Empty TicketBus response for " + request.url());
-            }
-            return body.string();
+            return response.body().string();
         } catch (IOException e) {
             throw new TicketBusClientException("Failed to load " + request.url(), e);
         }
@@ -241,7 +246,7 @@ public class TicketBusClient {
     }
 
     private boolean isAccessDenied(String html) {
-        return html != null && !html.isBlank()
+        return !html.isBlank()
                 && (html.contains(ACCESS_DENIED) || html.contains(SESSION_ENDED));
     }
 

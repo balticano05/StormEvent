@@ -11,7 +11,6 @@ import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import okhttp3.ResponseBody;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -56,11 +55,7 @@ public class AtlasClient {
                 throw new AtlasClientException("Atlas returned HTTP " + response.code() + " for search stream");
             }
 
-            ResponseBody body = response.body();
-            if (body == null) {
-                throw new AtlasClientException("Empty Atlas search stream response");
-            }
-            return sseParser.parse(body.string());
+            return sseParser.parse(response.body().string());
 
         } catch (IOException e) {
             throw new AtlasClientException("Failed to load Atlas search stream", e);
@@ -88,11 +83,7 @@ public class AtlasClient {
                 throw new AtlasClientException("Atlas returned HTTP " + response.code() + " for suggest");
             }
 
-            ResponseBody body = response.body();
-            if (body == null) {
-                throw new AtlasClientException("Empty Atlas suggest response");
-            }
-            return stationParser.parse(body.string());
+            return stationParser.parse(response.body().string());
 
         } catch (IOException e) {
             throw new AtlasClientException("Failed to load Atlas stations", e);

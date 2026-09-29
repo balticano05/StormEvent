@@ -9,7 +9,6 @@ import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import okhttp3.ResponseBody;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -68,12 +67,12 @@ public class BzdClient {
 
         HttpUrl url = baseBuilder()
                 .addPathSegments("ru/route/")
-                .addQueryParameter("from", fromStation.getValue())
-                .addQueryParameter("from_exp", fromStation.getExp())
-                .addQueryParameter("from_esr", fromStation.getEcp())
-                .addQueryParameter("to", toStation.getValue())
-                .addQueryParameter("to_exp", toStation.getExp())
-                .addQueryParameter("to_esr", toStation.getEcp())
+                .addQueryParameter("from", requiredCode(fromStation.getValue(), "value", from))
+                .addQueryParameter("from_exp", requiredCode(fromStation.getExp(), "exp", from))
+                .addQueryParameter("from_esr", requiredCode(fromStation.getEcp(), "ecp", from))
+                .addQueryParameter("to", requiredCode(toStation.getValue(), "value", to))
+                .addQueryParameter("to_exp", requiredCode(toStation.getExp(), "exp", to))
+                .addQueryParameter("to_esr", requiredCode(toStation.getEcp(), "ecp", to))
                 .addQueryParameter("date", date.toString())
                 .addQueryParameter("front_date", frontDate(date))
                 .build();
@@ -83,9 +82,16 @@ public class BzdClient {
 
     private BzdStation resolveStation(String query) {
         return resolveStations(query).stream()
-                .filter(s -> isCode(s.getExp()) && isCode(s.getEcp()))
+                .filter(s -> isCode(s.getValue()) && isCode(s.getExp()) && isCode(s.getEcp()))
                 .findFirst()
                 .orElseThrow(() -> new BzdClientException("Station not found for query: " + query));
+    }
+
+    private String requiredCode(String value, String field, String query) {
+        return Optional.ofNullable(value)
+                .filter(this::isCode)
+                .orElseThrow(() -> new BzdClientException(
+                        "BZD station '" + query + "' has no '" + field + "' code"));
     }
 
     private boolean isCode(String code) {
@@ -96,15 +102,20 @@ public class BzdClient {
         if (warmed) {
             return;
         }
-        HttpUrl url = baseBuilder().addPathSegments("ru/").build();
-        try (Response response = http.newCall(buildRequest(url)).execute()) {
-            if (!response.isSuccessful()) {
-                throw new BzdClientException("BZD warmup returned HTTP " + response.code());
+        synchronized (this) {
+            if (warmed) {
+                return;
             }
-        } catch (IOException e) {
-            throw new BzdClientException("Failed to warm up BZD session", e);
+            HttpUrl url = baseBuilder().addPathSegments("ru/").build();
+            try (Response response = http.newCall(buildRequest(url)).execute()) {
+                if (!response.isSuccessful()) {
+                    throw new BzdClientException("BZD warmup returned HTTP " + response.code());
+                }
+            } catch (IOException e) {
+                throw new BzdClientException("Failed to warm up BZD session", e);
+            }
+            warmed = true;
         }
-        warmed = true;
     }
 
     private String execute(HttpUrl url) {
@@ -112,11 +123,7 @@ public class BzdClient {
             if (!response.isSuccessful()) {
                 throw new BzdClientException("BZD returned HTTP " + response.code() + " for " + url);
             }
-            ResponseBody body = response.body();
-            if (body == null) {
-                throw new BzdClientException("Empty BZD response for " + url);
-            }
-            return body.string();
+            return response.body().string();
         } catch (IOException e) {
             throw new BzdClientException("Failed to load " + url, e);
         }

@@ -12,10 +12,9 @@ public class IdempotencyRowMapper implements RowMapper<IdempotencyEntity> {
     @Override
     public IdempotencyEntity mapRow(ResultSet rs, int rowNum) throws SQLException {
         IdempotencyEntity e = new IdempotencyEntity();
-        e.setRequestId(UUID.fromString(rs.getString("request_id")));
+        e.setRequestId(rs.getObject("request_id", UUID.class));
         e.setResponseJson(rs.getString("response_json"));
-        String sessionId = rs.getString("session_id");
-        e.setSessionId(sessionId != null ? UUID.fromString(sessionId) : null);
+        e.setSessionId(rs.getObject("session_id", UUID.class));
         e.setCreatedAt(TimestampMapper.toInstant(rs.getTimestamp("created_at")));
         e.setExpiresAt(TimestampMapper.toInstant(rs.getTimestamp("expires_at")));
         return e;

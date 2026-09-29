@@ -10,6 +10,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -30,12 +31,12 @@ public class AtlasSseParser {
         AtlasSearchResult result = new AtlasSearchResult();
 
         for (EventBlock block : EventBlock.split(sseText)) {
-            switch (block.eventName) {
-                case EVENT_PROGRESS -> handleProgress(result, block.data);
-                case EVENT_RIDES -> handleRides(result, block.data);
-                case EVENT_DONE -> handleDone(result, block.data);
-                case EVENT_ERROR -> result.getErrors().add(block.data == null ? "" : block.data.trim());
-                default -> log.debug("Ignoring unknown Atlas SSE event '{}'", block.eventName);
+            switch (block.eventName()) {
+                case EVENT_PROGRESS -> handleProgress(result, block.data());
+                case EVENT_RIDES -> handleRides(result, block.data());
+                case EVENT_DONE -> handleDone(result, block.data());
+                case EVENT_ERROR -> result.getErrors().add(block.data().trim());
+                default -> log.debug("Ignoring unknown Atlas SSE event '{}'", block.eventName());
             }
         }
 
@@ -43,41 +44,45 @@ public class AtlasSseParser {
     }
 
     private void handleRides(AtlasSearchResult result, String data) {
-        try {
-            JsonNode node = mapper.readTree(data);
-            if (!node.hasNonNull("rides")) {
-                log.debug("Skipping rides event without 'rides' payload");
-                return;
+        readTree(data, "rides").filter(node -> node.hasNonNull("rides")).ifPresent(node -> {
+            try {
+                List<AtlasRide> rides = mapper.readValue(node.get("rides").toString(),
+                        new TypeReference<List<AtlasRide>>() { });
+                result.getRides().addAll(rides);
+            } catch (JacksonException e) {
+                log.debug("Skipping malformed rides payload: {}", e.getMessage());
             }
-            List<AtlasRide> rides = mapper.readValue(node.get("rides").toString(),
-                    new TypeReference<List<AtlasRide>>() { });
-            result.getRides().addAll(rides);
-        } catch (JacksonException e) {
-            log.debug("Skipping malformed rides event: {}", e.getMessage());
-        }
+        });
     }
 
     private void handleProgress(AtlasSearchResult result, String data) {
-        try {
-            JsonNode node = mapper.readTree(data);
+        readTree(data, "progress").ifPresent(node -> {
             result.setProgressCompleted(node.path("completed").asInt());
             result.setProgressTotal(node.path("total").asInt());
             result.setProgressReached(true);
-        } catch (JacksonException e) {
-            log.debug("Skipping malformed progress event: {}", e.getMessage());
-        }
+        });
     }
 
     private void handleDone(AtlasSearchResult result, String data) {
-        try {
-            JsonNode node = mapper.readTree(data);
+        readTree(data, "done").ifPresent(node -> {
             result.setPartial(node.path("partial").asBoolean(false));
             result.setTotalRides(node.path("totalRides").asInt());
             result.setDurationMs(node.path("durationMs").asLong());
             node.path("succeeded").forEach(x -> result.getSucceeded().add(x.asText()));
             node.path("failed").forEach(x -> result.getFailed().add(x.asText()));
+        });
+    }
+
+    private Optional<JsonNode> readTree(String data, String eventName) {
+        if (data == null || data.isBlank()) {
+            log.debug("Skipping Atlas SSE event '{}' without data", eventName);
+            return Optional.empty();
+        }
+        try {
+            return Optional.ofNullable(mapper.readTree(data));
         } catch (JacksonException e) {
-            log.debug("Skipping malformed done event: {}", e.getMessage());
+            log.debug("Skipping malformed Atlas SSE event '{}': {}", eventName, e.getMessage());
+            return Optional.empty();
         }
     }
 
@@ -86,11 +91,11 @@ public class AtlasSseParser {
         static List<EventBlock> split(String sseText) {
             java.util.List<EventBlock> blocks = new java.util.ArrayList<>();
             for (String raw : sseText.split("\\r?\\n\\s*\\r?\\n")) {
-                String event = null;
+                Optional<String> event = Optional.empty();
                 StringBuilder data = new StringBuilder();
                 for (String line : raw.split("\\r?\\n")) {
                     if (line.startsWith("event:")) {
-                        event = line.substring("event:".length()).trim();
+                        event = Optional.of(line.substring("event:".length()).trim());
                     } else if (line.startsWith("data:")) {
                         if (!data.isEmpty()) {
                             data.append('\n');
@@ -98,9 +103,7 @@ public class AtlasSseParser {
                         data.append(line.substring("data:".length()).trim());
                     }
                 }
-                if (event != null) {
-                    blocks.add(new EventBlock(event, data.toString()));
-                }
+                event.ifPresent(name -> blocks.add(new EventBlock(name, data.toString())));
             }
             return blocks;
         }

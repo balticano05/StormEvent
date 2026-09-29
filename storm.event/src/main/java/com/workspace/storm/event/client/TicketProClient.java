@@ -6,7 +6,6 @@ import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import okhttp3.ResponseBody;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -45,11 +44,7 @@ public class TicketProClient {
                 throw new TicketProClientException("TicketPro returned HTTP " + response.code() + " for " + path);
             }
 
-            ResponseBody body = response.body();
-            if (body == null) {
-                throw new TicketProClientException("Empty TicketPro response for " + path);
-            }
-            return body.string();
+            return response.body().string();
 
         } catch (IOException e) {
             throw new TicketProClientException("Failed to load TicketPro page " + path, e);

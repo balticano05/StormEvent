@@ -53,10 +53,11 @@ public class SourceErrorLogRepository {
             SELECT COUNT(*) FROM storm.source_error_log
             WHERE source = :source AND code = :code AND created_at >= :since
             """;
-        return jdbc.queryForObject(sql, new MapSqlParameterSource()
+        Integer count = jdbc.queryForObject(sql, new MapSqlParameterSource()
                 .addValue("source", source)
                 .addValue("code", code)
                 .addValue("since", since), Integer.class);
+        return count == null ? 0 : count;
     }
 
     public List<SourceErrorLogEntity> findBySource(String source) {

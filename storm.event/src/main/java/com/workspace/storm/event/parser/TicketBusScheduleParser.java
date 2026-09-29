@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,10 +26,9 @@ public class TicketBusScheduleParser {
         Document doc = Jsoup.parse("<table><tbody>" + html + "</tbody></table>");
         List<TbSchedule> schedules = new ArrayList<>();
         for (Element route : doc.select(ROW_SELECTOR)) {
-            Element row = route.parent();
-            if (row != null) {
-                schedules.add(parseRow(row));
-            }
+            Optional.ofNullable(route.parent())
+                    .map(this::parseRow)
+                    .ifPresent(schedules::add);
         }
         return schedules;
     }
@@ -36,56 +36,29 @@ public class TicketBusScheduleParser {
     private TbSchedule parseRow(Element row) {
         List<Element> cells = row.children();
         TbSchedule schedule = new TbSchedule();
-        Element route = cell(cells, 1);
-        schedule.setCode(route == null ? null : clickCode(route.outerHtml()));
-        schedule.setRoute(route == null ? null : ownText(route));
-        schedule.setAvailability(availability(route));
-        schedule.setForward(text(cell(cells, 2)));
-        schedule.setBackward(text(cell(cells, 3)));
-        schedule.setPeriodicity(periodicity(cell(cells, 4)));
-        schedule.setAddress(text(cell(cells, 5)));
+        Element route = Parsers.cell(cells, 1);
+        schedule.setCode(Optional.ofNullable(route)
+                .map(Element::outerHtml)
+                .flatMap(TicketBusScheduleParser::clickCode)
+                .orElse(null));
+        schedule.setRoute(Parsers.ownText(route).orElse(null));
+        schedule.setAvailability(availability(route).orElse(null));
+        schedule.setForward(Parsers.text(Parsers.cell(cells, 2)).orElse(null));
+        schedule.setBackward(Parsers.text(Parsers.cell(cells, 3)).orElse(null));
+        schedule.setPeriodicity(Parsers.text(Parsers.cell(cells, 4)).orElse(null));
+        schedule.setAddress(Parsers.text(Parsers.cell(cells, 5)).orElse(null));
         return schedule;
     }
 
-    private String availability(Element route) {
-        if (route == null) {
-            return null;
-        }
-        Element font = route.selectFirst("font");
-        return font == null ? null : text(font);
+    private Optional<String> availability(Element route) {
+        return Optional.ofNullable(route)
+                .map(r -> r.selectFirst("font"))
+                .flatMap(Parsers::text);
     }
 
-    private String periodicity(Element el) {
-        if (el == null) {
-            return null;
-        }
-        String value = el.text().replace('\u00A0', ' ').replaceAll("\\s+", " ").trim();
-        return value.isBlank() ? null : value;
-    }
-
-    private String clickCode(String html) {
+    private static Optional<String> clickCode(String html) {
         Matcher m = CLICK_CODE.matcher(html);
-        return m.find() ? m.group(1) : null;
-    }
-
-    private String ownText(Element el) {
-        if (el == null) {
-            return null;
-        }
-        String value = el.ownText().replace('\u00A0', ' ').trim();
-        return value.isBlank() ? null : value;
-    }
-
-    private String text(Element el) {
-        if (el == null) {
-            return null;
-        }
-        String value = el.text().replace('\u00A0', ' ').trim();
-        return value.isBlank() ? null : value;
-    }
-
-    private Element cell(List<Element> cells, int index) {
-        return index < cells.size() ? cells.get(index) : null;
+        return m.find() ? Optional.of(m.group(1)) : Optional.empty();
     }
 
 }

@@ -11,6 +11,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -26,11 +27,10 @@ public class RequestIdFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, @NotNull HttpServletResponse response, @NotNull FilterChain filterChain)
             throws ServletException, IOException {
 
-        String requestId = request.getHeader(REQUEST_ID_HEADER);
-
-        if (!StringUtils.hasText(requestId) || !VALID_PATTERN.matcher(requestId).matches()) {
-            requestId = UUID.randomUUID().toString();
-        }
+        String requestId = Optional.ofNullable(request.getHeader(REQUEST_ID_HEADER))
+                .filter(StringUtils::hasText)
+                .filter(id -> VALID_PATTERN.matcher(id).matches())
+                .orElseGet(() -> UUID.randomUUID().toString());
 
         request.setAttribute(REQUEST_ID_ATTRIBUTE, requestId);
         MDC.put(MDC_KEY, requestId);
@@ -44,7 +44,8 @@ public class RequestIdFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        String path = request.getServletPath();
-        return !path.startsWith("/api/v1/");
+        return !Optional.ofNullable(request.getServletPath())
+                .orElse("")
+                .startsWith("/api/v1/");
     }
 }

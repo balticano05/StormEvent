@@ -4,11 +4,13 @@ import com.workspace.storm.event.entity.tb.TbStop;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -26,55 +28,46 @@ public class TicketBusStopParser {
         Document doc = Jsoup.parse(html);
         List<TbStop> stops = new ArrayList<>();
         for (Element row : doc.select(ROW_SELECTOR)) {
-            TbStop stop = parseRow(row);
-            if (stop != null) {
-                stops.add(stop);
-            }
+            parseRow(row).ifPresent(stops::add);
         }
         return stops;
     }
 
-    private TbStop parseRow(Element row) {
-        List<Element> cells = new ArrayList<>();
-        for (Element child : row.children()) {
-            if ("td".equals(child.tagName())) {
-                cells.add(child);
-            }
-        }
+    private Optional<TbStop> parseRow(Element row) {
+        Elements cells = Parsers.directTds(row);
         if (cells.size() < 2) {
-            return null;
+            return Optional.empty();
         }
         TbStop stop = new TbStop();
-        stop.setStationId(stationId(row, cells.get(0)));
-        stop.setName(text(cell(cells, 1)));
-        stop.setDistance(text(cell(cells, 2)));
-        stop.setDeparture(text(cell(cells, 3)));
-        stop.setArrival(text(cell(cells, 4)));
-        stop.setAddress(text(cell(cells, 5)));
-        return stop;
+        stop.setStationId(stationId(row, Parsers.cell(cells, 0)).orElse(null));
+        stop.setName(Parsers.text(Parsers.cell(cells, 1)).orElse(null));
+        stop.setDistance(Parsers.text(Parsers.cell(cells, 2)).orElse(null));
+        stop.setDeparture(Parsers.text(Parsers.cell(cells, 3)).orElse(null));
+        stop.setArrival(Parsers.text(Parsers.cell(cells, 4)).orElse(null));
+        stop.setAddress(Parsers.text(Parsers.cell(cells, 5)).orElse(null));
+        return Optional.of(stop);
     }
 
-    private String stationId(Element row, Element first) {
-        if (first != null) {
-            Matcher m = RADIO_ID.matcher(first.outerHtml());
-            if (m.find()) {
-                return m.group(1);
-            }
+    private Optional<String> stationId(Element row, Element first) {
+        Optional<String> fromRadio = Optional.ofNullable(first)
+                .map(Element::outerHtml)
+                .flatMap(TicketBusStopParser::firstGroupOf);
+        if (fromRadio.isPresent()) {
+            return fromRadio;
         }
-        Matcher ms = SCRIPT_ID.matcher(row.html());
-        return ms.find() ? ms.group(1) : null;
+        return Optional.ofNullable(row)
+                .map(Element::html)
+                .flatMap(TicketBusStopParser::scriptId);
     }
 
-    private String text(Element el) {
-        if (el == null) {
-            return null;
-        }
-        String value = el.text().replace('\u00A0', ' ').trim();
-        return value.isBlank() ? null : value;
+    private static Optional<String> firstGroupOf(String html) {
+        Matcher m = RADIO_ID.matcher(html);
+        return m.find() ? Optional.of(m.group(1)) : Optional.empty();
     }
 
-    private Element cell(List<Element> cells, int index) {
-        return index < cells.size() ? cells.get(index) : null;
+    private static Optional<String> scriptId(String html) {
+        Matcher m = SCRIPT_ID.matcher(html);
+        return m.find() ? Optional.of(m.group(1)) : Optional.empty();
     }
 
 }

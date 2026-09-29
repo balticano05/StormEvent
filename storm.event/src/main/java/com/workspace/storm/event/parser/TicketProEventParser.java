@@ -29,14 +29,7 @@ public class TicketProEventParser {
         Document doc = Jsoup.parse(html);
 
         for (Element script : doc.select("script[type=application/ld+json]")) {
-            try {
-                JsonNode root = mapper.readTree(script.data());
-                if (isEvent(root)) {
-                    events.add(mapEvent(root));
-                }
-            } catch (JacksonException e) {
-                log.debug("Skipping malformed JSON-LD script: {}", e.getMessage());
-            }
+            readTree(script.data()).filter(this::isEvent).map(this::mapEvent).ifPresent(events::add);
         }
         return events;
     }
@@ -46,11 +39,24 @@ public class TicketProEventParser {
         return doc.selectFirst("link[rel=next]") != null;
     }
 
+    private Optional<JsonNode> readTree(String json) {
+        if (json == null || json.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.ofNullable(mapper.readTree(json));
+        } catch (JacksonException e) {
+            log.debug("Skipping malformed JSON-LD script: {}", e.getMessage());
+            return Optional.empty();
+        }
+    }
+
     private boolean isEvent(JsonNode node) {
-        if (!node.has("@type")) {
+        Optional<JsonNode> type = Optional.ofNullable(node.get("@type"));
+        if (type.isEmpty()) {
             return false;
         }
-        JsonNode t = node.get("@type");
+        JsonNode t = type.get();
         if (t.isArray()) {
             for (JsonNode x : t) {
                 if ("Event".equalsIgnoreCase(x.asText())) {
@@ -70,8 +76,7 @@ public class TicketProEventParser {
         e.setEndDate(text(n, "endDate").orElse(null));
         e.setDescription(text(n, "description").orElse(null));
 
-        if (n.has("image")) {
-            JsonNode img = n.get("image");
+        node(n, "image").ifPresent(img -> {
             List<String> list = new ArrayList<>();
             if (img.isArray()) {
                 img.forEach(x -> imageUrl(x).ifPresent(list::add));
@@ -79,31 +84,27 @@ public class TicketProEventParser {
                 imageUrl(img).ifPresent(list::add);
             }
             e.setImages(list);
-        }
+        });
 
-        if (n.hasNonNull("location")) {
-            e.setLocation(mapLocation(n.get("location")));
-        }
-
-        if (n.hasNonNull("offers")) {
-            e.setOffers(mapOffer(n.get("offers")));
-        }
+        node(n, "location").map(this::mapLocation).ifPresent(e::setLocation);
+        node(n, "offers").map(this::mapOffer).ifPresent(e::setOffers);
         return e;
     }
 
     private Location mapLocation(JsonNode loc) {
         Location l = new Location();
         l.setName(text(loc, "name").orElse(null));
-        if (loc.hasNonNull("address")) {
-            JsonNode a = loc.get("address");
-            Address addr = new Address();
-            addr.setStreetAddress(text(a, "streetAddress").orElse(null));
-            addr.setAddressLocality(text(a, "addressLocality").orElse(null));
-            addr.setAddressRegion(text(a, "addressRegion").orElse(null));
-            addr.setAddressCountry(text(a, "addressCountry").orElse(null));
-            l.setAddress(addr);
-        }
+        node(loc, "address").ifPresent(a -> l.setAddress(mapAddress(a)));
         return l;
+    }
+
+    private Address mapAddress(JsonNode a) {
+        Address addr = new Address();
+        addr.setStreetAddress(text(a, "streetAddress").orElse(null));
+        addr.setAddressLocality(text(a, "addressLocality").orElse(null));
+        addr.setAddressRegion(text(a, "addressRegion").orElse(null));
+        addr.setAddressCountry(text(a, "addressCountry").orElse(null));
+        return addr;
     }
 
     private Offer mapOffer(JsonNode o) {
@@ -127,16 +128,21 @@ public class TicketProEventParser {
         return Optional.of(img.asText()).filter(s -> !s.isEmpty());
     }
 
+    private static Optional<JsonNode> node(JsonNode n, String field) {
+        return Optional.ofNullable(n.get(field)).filter(node -> !node.isNull());
+    }
+
     private static Optional<String> text(JsonNode n, String field) {
-        return n.hasNonNull(field) ? Optional.of(n.get(field).asText()) : Optional.empty();
+        return node(n, field).map(JsonNode::asText);
     }
 
     private static Optional<BigDecimal> decimal(JsonNode n, String field) {
-        if (!n.hasNonNull(field)) {
-            return Optional.empty();
-        }
+        return node(n, field).flatMap(TicketProEventParser::toDecimal);
+    }
+
+    private static Optional<BigDecimal> toDecimal(JsonNode node) {
         try {
-            return Optional.of(new BigDecimal(n.get(field).asText()));
+            return Optional.of(new BigDecimal(node.asText()));
         } catch (NumberFormatException ex) {
             return Optional.empty();
         }

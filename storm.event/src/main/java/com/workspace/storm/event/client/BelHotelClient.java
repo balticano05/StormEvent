@@ -10,7 +10,6 @@ import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import okhttp3.ResponseBody;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.stereotype.Component;
@@ -50,11 +49,7 @@ public class BelHotelClient {
                 throw new BelHotelClientException("Belhotel returned HTTP " + response.code());
             }
 
-            ResponseBody body = response.body();
-            if (body == null) {
-                throw new BelHotelClientException("Empty Belhotel response");
-            }
-            try (InputStream in = body.byteStream()) {
+            try (InputStream in = response.body().byteStream()) {
                 Document doc = Jsoup.parse(in, "windows-1251", url.toString());
                 return responseParser.parse(doc, req.getCityId());
             }

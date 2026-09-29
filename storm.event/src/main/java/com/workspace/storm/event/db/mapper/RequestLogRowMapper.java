@@ -13,13 +13,12 @@ public class RequestLogRowMapper implements RowMapper<RequestLogEntity> {
     public RequestLogEntity mapRow(ResultSet rs, int rowNum) throws SQLException {
         RequestLogEntity e = new RequestLogEntity();
         e.setId(rs.getLong("id"));
-        e.setRequestId(UUID.fromString(rs.getString("request_id")));
-        String sessionId = rs.getString("session_id");
-        e.setSessionId(sessionId != null ? UUID.fromString(sessionId) : null);
+        e.setRequestId(rs.getObject("request_id", UUID.class));
+        e.setSessionId(rs.getObject("session_id", UUID.class));
         e.setText(rs.getString("text"));
         e.setIntentJson(rs.getString("intent_json"));
         e.setStatus(rs.getString("status"));
-        e.setDurationMs((Integer) rs.getObject("duration_ms"));
+        e.setDurationMs(rs.getObject("duration_ms", Integer.class));
         e.setCreatedAt(TimestampMapper.toInstant(rs.getTimestamp("created_at")));
         return e;
     }

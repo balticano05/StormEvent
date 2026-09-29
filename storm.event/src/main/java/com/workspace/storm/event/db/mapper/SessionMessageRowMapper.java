@@ -13,12 +13,11 @@ public class SessionMessageRowMapper implements RowMapper<SessionMessageEntity> 
     public SessionMessageEntity mapRow(ResultSet rs, int rowNum) throws SQLException {
         SessionMessageEntity e = new SessionMessageEntity();
         e.setId(rs.getLong("id"));
-        e.setSessionId(UUID.fromString(rs.getString("session_id")));
+        e.setSessionId(rs.getObject("session_id", UUID.class));
         e.setRole(rs.getString("role"));
         e.setKind(rs.getString("kind"));
         e.setText(rs.getString("text"));
-        String reqId = rs.getString("request_id");
-        e.setRequestId(reqId != null ? UUID.fromString(reqId) : null);
+        e.setRequestId(rs.getObject("request_id", UUID.class));
         e.setCreatedAt(TimestampMapper.toInstant(rs.getTimestamp("created_at")));
         return e;
     }

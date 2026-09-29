@@ -25,18 +25,21 @@ public class BelHotelResponseParser {
             Pattern.compile("\\d[\\d\\s\\u00A0]*(?:[.,]\\d+)?");
 
     public List<Hotel> parse(Document doc, Long cityId) {
+        if (doc == null) {
+            return List.of();
+        }
         Map<String, Hotel> byName = new LinkedHashMap<>();
 
         for (Element row : doc.select("table.tab5x tr.tr_hover")) {
-            Elements tds = directTds(row);
+            Elements tds = Parsers.directTds(row);
             if (tds.size() < 8) continue;
 
-            Element hotelTd = tds.get(1);
-            Element hotelLink = hotelTd.selectFirst("a.dashed");
+            Element hotelTd = Parsers.cell(tds, 1);
+            Element hotelLink = hotelTd == null ? null : hotelTd.selectFirst("a.dashed");
             if (hotelLink == null) continue;
 
-            String hotelName = hotelLink.text().trim();
-            if (hotelName.isEmpty()) continue;
+            String hotelName = Parsers.clean(hotelLink.text()).orElse(null);
+            if (hotelName == null) continue;
 
             Hotel hotel = byName.computeIfAbsent(hotelName, name -> createHotel(hotelTd, name));
             hotel.getOffers().add(parseOffer(tds));
@@ -59,9 +62,9 @@ public class BelHotelResponseParser {
     }
 
     private Optional<String> extractType(Element hotelTd) {
-        String own = hotelTd.ownText().trim();
-        if (own.startsWith("-")) own = own.substring(1).trim();
-        return own.isEmpty() ? Optional.empty() : Optional.of(own);
+        String own = Parsers.clean(hotelTd.ownText()).orElse("");
+        String type = own.startsWith("-") ? own.substring(1).trim() : own;
+        return Parsers.clean(type);
     }
 
     private Optional<String> extractCategory(Element hotelTd) {
@@ -78,26 +81,32 @@ public class BelHotelResponseParser {
     private RoomOffer parseOffer(Elements tds) {
         RoomOffer offer = new RoomOffer();
 
-        Element roomTd = tds.get(4);
-        Element roomB = roomTd.selectFirst("b");
-        offer.setRoomType(roomB != null ? roomB.text().trim() : roomTd.text().trim());
-        offer.setCapacity(tds.get(3).select("img[src*=p_one], img[src*=p_dop]").size());
+        Element roomTd = Parsers.cell(tds, 4);
+        Element roomB = roomTd == null ? null : roomTd.selectFirst("b");
+        offer.setRoomType(roomB != null
+                ? Parsers.clean(roomB.text()).orElse("")
+                : Parsers.text(roomTd).orElse(""));
+        offer.setCapacity(Optional.ofNullable(Parsers.cell(tds, 3))
+                .map(c -> c.select("img[src*=p_one], img[src*=p_dop]").size())
+                .orElse(0));
 
-        Optional.ofNullable(tds.get(2).selectFirst("img"))
+        Optional.ofNullable(Parsers.cell(tds, 2))
+                .map(td -> td.selectFirst("img"))
                 .map(img -> img.absUrl("src"))
                 .filter(s -> !s.isEmpty())
                 .ifPresent(offer::setImageUrl);
 
-        String priceText = tds.get(5).text().trim();
+        String priceText = Parsers.text(Parsers.cell(tds, 5)).orElse("");
         offer.setPrice(parsePrice(priceText).orElse(null));
         offer.setCurrency(parseCurrency(priceText).orElse(null));
 
-        Element breakfastTd = tds.get(6);
-        String breakfastTitle = breakfastTd.attr("title");
+        Element breakfastTd = Parsers.cell(tds, 6);
+        String breakfastTitle = Parsers.attr(breakfastTd, "title").orElse("");
         offer.setBreakfastIncluded(
                 breakfastTitle.toLowerCase(Locale.ROOT).contains(BREAKFAST_INCLUDED_MARKER));
 
-        Optional.ofNullable(tds.get(7).selectFirst("a"))
+        Optional.ofNullable(Parsers.cell(tds, 7))
+                .map(td -> td.selectFirst("a"))
                 .map(a -> a.absUrl("href"))
                 .filter(s -> !s.isEmpty())
                 .ifPresent(offer::setBookingUrl);
@@ -109,12 +118,7 @@ public class BelHotelResponseParser {
         if (raw == null) return Optional.empty();
         Matcher m = PRICE_PATTERN.matcher(raw);
         if (!m.find()) return Optional.empty();
-        String cleaned = m.group().replaceAll("[\\s\\u00A0]", "").replace(',', '.');
-        try {
-            return Optional.of(new BigDecimal(cleaned));
-        } catch (NumberFormatException e) {
-            return Optional.empty();
-        }
+        return Parsers.toDecimal(m.group().replaceAll("[\\s\\u00A0]", ""));
     }
 
     private Optional<String> parseCurrency(String raw) {
@@ -123,16 +127,6 @@ public class BelHotelResponseParser {
         if (raw.contains("RUB")) return Optional.of("RUB");
         if (raw.contains("EUR")) return Optional.of("EUR");
         return Optional.empty();
-    }
-
-    private Elements directTds(Element row) {
-        Elements tds = new Elements();
-        for (Element child : row.children()) {
-            if ("td".equals(child.tagName())) {
-                tds.add(child);
-            }
-        }
-        return tds;
     }
 
 }
