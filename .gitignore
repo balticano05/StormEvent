@@ -36,3 +36,8 @@ replay_pid*
 .env.*
 !.env.example
 # .env (с секретами) не отслеживается: пример — .env.example
+
+# Local secrets and connection settings, imported via spring.config.import
+secrets.properties
+/secrets.properties
+!secrets.properties.example
