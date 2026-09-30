@@ -1,5 +1,6 @@
 package com.workspace.storm.event;
 
+import com.workspace.storm.event.db.support.DbConnectionTestSupport;
 import com.workspace.storm.event.entity.ticket.Event;
 import com.workspace.storm.event.service.TicketProService;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Slf4j
 @Tag("integration")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-public class TicketProServiceIntegrationTest {
+public class TicketProServiceIntegrationTest extends DbConnectionTestSupport {
 
     @Autowired
     private TicketProService ticketProService;

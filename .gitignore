@@ -34,5 +34,5 @@ replay_pid*
 # Environment files
 *.env
 .env.*
-!.env
 !.env.example
+# .env (с секретами) не отслеживается: пример — .env.example

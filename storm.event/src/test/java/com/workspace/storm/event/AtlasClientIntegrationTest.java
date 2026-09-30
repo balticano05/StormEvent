@@ -1,5 +1,6 @@
 package com.workspace.storm.event;
 
+import com.workspace.storm.event.db.support.DbConnectionTestSupport;
 import com.workspace.storm.event.client.AtlasClient;
 import com.workspace.storm.event.dto.AtlasSearchRequest;
 import com.workspace.storm.event.entity.atlas.AtlasSearchResult;
@@ -19,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Slf4j
 @Tag("integration")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-public class AtlasClientIntegrationTest {
+public class AtlasClientIntegrationTest extends DbConnectionTestSupport {
 
     @Autowired
     private AtlasClient atlasClient;

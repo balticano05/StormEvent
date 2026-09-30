@@ -2,8 +2,8 @@ package com.workspace.storm.event.db.repository;
 
 import com.workspace.storm.event.db.entity.IdempotencyEntity;
 import com.workspace.storm.event.db.mapper.IdempotencyRowMapper;
+import com.workspace.storm.event.db.support.SqlParams;
 import lombok.RequiredArgsConstructor;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -21,8 +21,8 @@ public class IdempotencyRepository {
 
     public Optional<IdempotencyEntity> get(UUID requestId) {
         String sql = "SELECT * FROM storm.idempotency WHERE request_id = :requestId";
-        List<IdempotencyEntity> result = jdbc.query(sql, new MapSqlParameterSource("requestId", requestId), rowMapper);
-        return result.stream().findFirst();
+        return jdbc.query(sql, SqlParams.create().add("requestId", requestId).build(), rowMapper)
+                .stream().findFirst();
     }
 
     public boolean putIfAbsent(IdempotencyEntity entity) {
@@ -31,22 +31,41 @@ public class IdempotencyRepository {
             VALUES (:requestId, :responseJson::jsonb, :sessionId, :createdAt, :expiresAt)
             ON CONFLICT (request_id) DO NOTHING
             """;
-        int rows = jdbc.update(sql, new MapSqlParameterSource()
-                .addValue("requestId", entity.getRequestId())
-                .addValue("responseJson", entity.getResponseJson())
-                .addValue("sessionId", entity.getSessionId())
-                .addValue("createdAt", entity.getCreatedAt())
-                .addValue("expiresAt", entity.getExpiresAt()));
+        int rows = jdbc.update(sql, SqlParams.create()
+                .add("requestId", entity.getRequestId())
+                .add("responseJson", entity.getResponseJson())
+                .add("sessionId", entity.getSessionId())
+                .addInstant("createdAt", entity.getCreatedAt())
+                .addInstant("expiresAt", entity.getExpiresAt())
+                .build());
         return rows > 0;
+    }
+
+    public void saveResponse(UUID requestId, String responseJson) {
+        String sql = "UPDATE storm.idempotency SET response_json = :responseJson::jsonb WHERE request_id = :requestId";
+        jdbc.update(sql, SqlParams.create()
+                .add("requestId", requestId)
+                .add("responseJson", responseJson)
+                .build());
     }
 
     public List<IdempotencyEntity> findExpired(Instant before) {
         String sql = "SELECT * FROM storm.idempotency WHERE expires_at < :before";
-        return jdbc.query(sql, new MapSqlParameterSource("before", before), rowMapper);
+        return jdbc.query(sql, SqlParams.create().addInstant("before", before).build(), rowMapper);
     }
 
-    public void deleteExpired(Instant before) {
-        String sql = "DELETE FROM storm.idempotency WHERE expires_at < :before";
-        jdbc.update(sql, new MapSqlParameterSource("before", before));
+    public int deleteExpired(Instant before, int limit) {
+        String sql = """
+            DELETE FROM storm.idempotency
+            WHERE request_id IN (
+                SELECT request_id FROM storm.idempotency
+                WHERE expires_at < :before
+                LIMIT :limit
+            )
+            """;
+        return jdbc.update(sql, SqlParams.create()
+                .addInstant("before", before)
+                .add("limit", limit)
+                .build());
     }
 }

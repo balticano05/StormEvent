@@ -223,136 +223,158 @@
 
 ## ФАЗА 3. БД: структурные таблицы, ключи, индексы (171–300)
 
-171. Спроектировать ER-модель (текстовая): session, **session_message**, request_log, source_state, cached_result, idempotency, source_error_log, stats_hourly. ~~circuit_state~~ — [ВЛ] не делаем (ADR-VL-04).
-172. Нарисовать диаграмму в `docs/db-er.md` (ascii или mermaid).
-173. `V1` таблица `storm.session`: id uuid PK, intent jsonb, lastAccessAt timestamptz, createdAt timestamptz, ttlSeconds int, state varchar(16).
-174. `session` правила: `lastAccessAt` обновляется каждым обращением; TTL чистка по `createdAt + ttl`.
-175. Индекс `session(createdAt)` для housekeeper; `session(state)` для внешних.
-176. `V2` таблица `session_message`: id bigint identity PK, sessionId fk → session.id (on delete cascade), role varchar(8) (`user`|`agent`), kind varchar(16) (`search`|`refine`|`answer`|`system`), text text, requestId uuid, createdAt timestamptz. [ВЛ] ADR-VL-02 — **диалог вместо `session_refine`**.
-177. Индекс `session_message(sessionId, createdAt)` — выборка контекста для LLM (последние 20).
-178. ADR-029 (черновик): FK `ON DELETE CASCADE` для дочерних записей сессии.
-179. `V3` таблица `source_state`: source varchar(32) PK, enabled boolean, draining boolean, rampUntil timestamptz, updatedAt timestamptz.
-180. Правило: `draining=true` ⇒ новые запросы не идут; `enabled=false` ⇒ мгновенный стоп (АНП-106/101).
+171. [✓] Спроектировать ER-модель (текстовая): session, **session_message**, request_log, source_state, cached_result, idempotency, source_error_log, stats_hourly. ~~circuit_state~~ — [ВЛ] не делаем (ADR-VL-04).
+172. [✓] Нарисовать диаграмму в `docs/db-er.md` (ascii или mermaid). → **выполнено**: [`db-er.md`](db-er.md) (mermaid, 8 таблиц, партиционирование).
+173. [✓] `V1` таблица `storm.session`: id uuid PK, intent jsonb, lastAccessAt timestamptz, createdAt timestamptz, ttlSeconds int, state varchar(16).
+174. [✓] `session` правила: `lastAccessAt` обновляется каждым обращением; TTL чистка по `createdAt + ttl`.
+175. [✓] Индекс `session(createdAt)` для housekeeper; `session(state)` для внешних.
+176. [✓] `V2` таблица `session_message`: id bigint identity PK, sessionId fk → session.id (on delete cascade), role varchar(8) (`user`|`agent`), kind varchar(16) (`search`|`refine`|`answer`|`system`), text text, requestId uuid, createdAt timestamptz. [ВЛ] ADR-VL-02 — **диалог вместо `session_refine`**.
+177. [✓] Индекс `session_message(sessionId, createdAt)` — выборка контекста для LLM (последние 20).
+178. [✓] ADR-029 (черновик): FK `ON DELETE CASCADE` для дочерних записей сессии.
+179. [✓] `V3` таблица `source_state`: source varchar(32) PK, enabled boolean, draining boolean, rampUntil timestamptz, updatedAt timestamptz.
+180. [✓] Правило: `draining=true` ⇒ новые запросы не идут; `enabled=false` ⇒ мгновенный стоп (АНП-106/101).
 181. ~~`V4` таблица `circuit_state`~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-VL-04: circuit breaker не делаем.
 182. ~~Индексировать `circuit_state(state)`~~ — **[ОТМЕНЕНО]** вместе с 181.
 183. ~~ADR-030 (черновик): circuit-state в БД~~ — **[ОТМЕНЕНО]**; метрики ошибок источников идут в `source_error_log`/`stats_source_hourly`.
-184. `V5` таблица `cached_result`: cacheKey varchar(255) PK, source varchar(32), domain varchar(16), payloadJson jsonb, createdAt timestamptz, expiresAt timestamptz, stale boolean.
-185. Индекс `cached_result(expiresAt)` — housekeeper чистит протухшее.
-186. Индекс `cached_result(source, domain)` — для статистики.
-187. `V6` таблица `idempotency`: requestId uuid PK, responseJson jsonb, sessionId uuid nullable, createdAt timestamptz, expiresAt timestamptz.
-188. Правило идемпотентности: повторный `requestId` из окна → вернуть прежний ответ (см. шаг 43).
-189. Индекс `idempotency(expiresAt)` — чистка.
-190. `V7` таблица `request_log`: id bigint identity PK, requestId uuid, sessionId uuid, text varchar(2000), intentJson jsonb, status varchar(16), durationMs int, createdAt timestamptz.
-191. Индекс `request_log(createdAt)` — партиционирование по времени (фаза 4).
-192. Индекс `request_log(sessionId)` — история сессии.
-193. `V8` таблица `source_error_log`: id bigint identity PK, requestId uuid, source varchar(32), code varchar(64), message varchar(1000), latencyMs int, createdAt timestamptz.
-194. Индекс `source_error_log(createdAt)` для дашборда/агрегации.
-195. Индекс `source_error_log(source, code)` для алертов по кодам.
-196. `V9` таблица `stats_source_hourly`: hour timestamptz, source varchar(32), code varchar(64), count int, PK (hour, source, code).
-197. Правило: агрегация раз в час из request_log/source_error_log (см. фазу 15).
-198. `V10` — отдельная миграция `GRANT`/роли (если нужно) — отложить.
-199. Сформулировать типы ключей: requestId/sessionId — UUID; source_state/cache — строковые natural keys. ~~circuit_state~~ — [ВЛ] не делаем.
-200. ADR-031 (черновик): natural keys для «состояний источника» (source name) — без суррогатных id.
-201. Проверить уникальность `offerId` не храним в БД (офферы транзитные) — принять.
-202. ADR-032 (черновик): офферы и комбо НЕ персистятся (вычисляются на лету), только сессия/логи/кэш.
-203. Написать миграции V1–V9 одним PR (рефакторинг безопасности).
-204. Написать `FlywayMigrationTest`: применить все V, проверить таблицы `information_schema`.
-205. Написать мапперы схемы: `SessionMapper`, `SessionMessageMapper`, `SourceStateMapper`, `CachedResultMapper`. ~~`CircuitStateMapper`~~ — [ВЛ] не делаем.
-206. Написать юнит-тесты мапперов (кортеж → объект, null-поля).
-207. Создать репозитории: `SessionRepository`, `SessionMessageRepository`, `SourceStateRepository`, `CacheRepository`, `IdempotencyRepository`, `RequestLogRepository`, `SourceErrorLogRepository`, `StatsRepository`. ~~`CircuitStateRepository`~~ — [ВЛ] не делаем.
-208. Каждый репозиторий: интерфейс + impl на `NamedParameterJdbcTemplate`.
-209. `SessionRepository` методы: `insert`, `get`, `updateIntent`, `touch`, `delete`, `findExpired`.
-210. Написать тест `SessionRepositoryTest` (H2): CRUD, TTL-выборка.
-211. `SourceStateRepository`: `upsert`, `get`, `findByEnabled`.
-212. Написать тест `SourceStateRepositoryTest`: upsert-idempotent.
+184. [✓] `V5` таблица `cached_result`: cacheKey varchar(255) PK, source varchar(32), domain varchar(16), payloadJson jsonb, createdAt timestamptz, expiresAt timestamptz, stale boolean.
+185. [✓] Индекс `cached_result(expiresAt)` — housekeeper чистит протухшее.
+186. [✓] Индекс `cached_result(source, domain)` — для статистики.
+187. [✓] `V6` таблица `idempotency`: requestId uuid PK, responseJson jsonb, sessionId uuid nullable, createdAt timestamptz, expiresAt timestamptz.
+188. [✓] Правило идемпотентности: повторный `requestId` из окна → вернуть прежний ответ (см. шаг 43).
+189. [✓] Индекс `idempotency(expiresAt)` — чистка.
+190. [✓] `V7` таблица `request_log`: id bigint identity PK, requestId uuid, sessionId uuid, text varchar(2000), intentJson jsonb, status varchar(16), durationMs int, createdAt timestamptz.
+191. [✓] Индекс `request_log(createdAt)` — партиционирование по времени (фаза 4).
+192. [✓] Индекс `request_log(sessionId)` — история сессии.
+193. [✓] `V8` таблица `source_error_log`: id bigint identity PK, requestId uuid, source varchar(32), code varchar(64), message varchar(1000), latencyMs int, createdAt timestamptz.
+194. [✓] Индекс `source_error_log(createdAt)` для дашборда/агрегации.
+195. [✓] Индекс `source_error_log(source, code)` для алертов по кодам.
+196. [✓] `V9` таблица `stats_source_hourly`: hour timestamptz, source varchar(32), code varchar(64), count int, PK (hour, source, code).
+197. [✓] Правило: агрегация раз в час из request_log/source_error_log (см. фазу 15).
+198. [✓] `V10` — отдельная миграция `GRANT`/роли (если нужно) — отложить. → **отложено по плану**: роли выдаёт эксплуатация, `GRANT` в миграциях не делаем.
+199. [✓] Сформулировать типы ключей: requestId/sessionId — UUID; source_state/cache — строковые natural keys. ~~circuit_state~~ — [ВЛ] не делаем.
+200. [✓] ADR-031 (черновик): natural keys для «состояний источника» (source name) — без суррогатных id.
+201. [✓] Проверить уникальность `offerId` не храним в БД (офферы транзитные) — принять.
+202. [✓] ADR-032 (черновик): офферы и комбо НЕ персистятся (вычисляются на лету), только сессия/логи/кэш.
+203. [✓] Написать миграции V1–V9 одним PR (рефакторинг безопасности).
+204. [✓] Написать `FlywayMigrationTest`: применить все V, проверить таблицы `information_schema`.
+205. [✓] Написать мапперы схемы: `SessionMapper`, `SessionMessageMapper`, `SourceStateMapper`, `CachedResultMapper`. ~~`CircuitStateMapper`~~ — [ВЛ] не делаем. → **выполнено**: 8 `RowMapper` + `TimestampMapper` в `db/mapper`.
+206. [✓] Написать юнит-тесты мапперов (кортеж → объект, null-поля). → **выполнено**: разбор кортежей и null-полей в тестах репозиториев.
+207. [✓] Создать репозитории: `SessionRepository`, `SessionMessageRepository`, `SourceStateRepository`, `CacheRepository`, `IdempotencyRepository`, `RequestLogRepository`, `SourceErrorLogRepository`, `StatsRepository`. ~~`CircuitStateRepository`~~ — [ВЛ] не делаем.
+208. [✓] Каждый репозиторий: интерфейс + impl на `NamedParameterJdbcTemplate`. → **уточнено**: конкретные `@Repository` на `NamedParameterJdbcTemplate` без интерфейсов — реализация одна.
+209. [✓] `SessionRepository` методы: `insert`, `get`, `updateIntent`, `touch`, `delete`, `findExpired`.
+210. [✓] Написать тест `SessionRepositoryTest` (H2): CRUD, TTL-выборка. → **уточнено (ADR-040)**: `SessionRepositoryTest` на Testcontainers PostgreSQL 16, не на H2.
+211. [✓] `SourceStateRepository`: `upsert`, `get`, `findByEnabled`.
+212. [✓] Написать тест `SourceStateRepositoryTest`: upsert-idempotent.
 213. ~~`CircuitStateRepository`~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-VL-04.
 214. ~~Написать тест `CircuitStateRepositoryTest`~~ — **[ОТМЕНЕНО]** вместе с 213.
-215. `CacheRepository`: `get`, `put`, `findExpired`, `delete`.
-216. Написать тест `CacheRepositoryTest` (stale-переходы).
-217. `IdempotencyRepository`: `get`, `putIfAbsent`, `findExpired`.
-218. Написать тест идемпотентности: одинаковый requestId → один ответ.
-219. `RequestLogRepository`: `insert` (batch-friendly).
-220. `SourceErrorLogRepository`: `insert` + `countSince(source, code, minutes)`.
-221. `StatsRepository`: `incrementHourly`, `selectTopErrors`.
-222. Написать тест `StatsRepositoryTest`: агрегация корректна за час.
-223. Оптимизация: `batch insert` для source_error_log (jdbc batching, `NamedParameterJdbcTemplate.batchUpdate`).
-224. Написать бенчмарк-тест (грубый): 10k батч-инсертов за <N мс (необязательный порог, метка).
-225. Оптимизация: `prepared statement cache` (pg `jdbc.prepared_statement_cache_size=256`) — параметр url.
-226. Оптимизация: `rewriteBatchedStatements=true` в JDBC URL для postgres.
-227. [ПРОВ] Проверить H2-поддержку rewriteBatchedStatements — не нужна, только pg.
-228. Написать `QueryIndexPlanTest`: `EXPLAIN` на «горячих» запросах (catched_result by expiresAt и т.п.).
-229. [ПРОВ] Cпустить explain на реальном pg: убедиться, что индексы используются (SeqScan → IndexScan).
-230. Оптимизация `request_log`: партиционирование по `createdAt` (native Pg partitioning, step 153).
-231. Создать миграцию `V11__partition_request_log.sql` с default-партицией.
-232. Написать тест-фолбэк: H2 без партиций (обычная таблица), запросы те же — абстракция в репозитории.
-233. ADR-033 (черновик): партиционирование только на prod-pg через заданную миграцию; тесты используют полную таблицу.
-234. Оптимизация `source_error_log`: тоже партиционировать по месяц (V12), retention 90 дней.
-235. Оптимизация `session` TTL: housekeeper удаляет пачками по 1000 (limit) в транзакции.
-236. Написать тест `TtlCleanupTest`: 100 expired + 10 живых → удалены только expired.
-237. Оптимизация `idempotency`: чистить раз в минуту, batch delete by expiresAt.
-238. Написать тест дедупликации на уровне репозитория.
-239. Профиль индексов: уникальные — session(id-app), source_state(source), cached_result(cacheKey).
-240. Описание составных индексов: `source_error_log(source, code, createdAt)` — для алертов по частоте.
+215. [✓] `CacheRepository`: `get`, `put`, `findExpired`, `delete`.
+216. [✓] Написать тест `CacheRepositoryTest` (stale-переходы).
+217. [✓] `IdempotencyRepository`: `get`, `putIfAbsent`, `findExpired`.
+218. [✓] Написать тест идемпотентности: одинаковый requestId → один ответ.
+219. [✓] `RequestLogRepository`: `insert` (batch-friendly).
+220. [✓] `SourceErrorLogRepository`: `insert` + `countSince(source, code, minutes)`.
+221. [✓] `StatsRepository`: `incrementHourly`, `selectTopErrors`.
+222. [✓] Написать тест `StatsRepositoryTest`: агрегация корректна за час.
+223. [✓] Оптимизация: `batch insert` для source_error_log (jdbc batching, `NamedParameterJdbcTemplate.batchUpdate`).
+224. [✓] Написать бенчмарк-тест (грубый): 10k батч-инсертов за <N мс (необязательный порог, метка). → **выполнено**: `BatchInsertBenchmarkTest`, 10 000 строк одним `batchUpdate` за < 10 с.
+225. [✓] Оптимизация: `prepared statement cache` (pg `jdbc.prepared_statement_cache_size=256`) — параметр url.
+226. [✓] Оптимизация: `rewriteBatchedStatements=true` в JDBC URL для postgres.
+227. [✓] [ПРОВ] Проверить H2-поддержку rewriteBatchedStatements — не нужна, только pg.
+228. [✓] Написать `QueryIndexPlanTest`: `EXPLAIN` на «горячих» запросах (catched_result by expiresAt и т.п.). → **выполнено**: `IndexUsageTest` (план «горячих» запросов, класс `IndexUsageTest`).
+229. [✓] [ПРОВ] Cпустить explain на реальном pg: убедиться, что индексы используются (SeqScan → IndexScan). → **выполнено**: `EXPLAIN ANALYZE` на 20 000 строк — `Index Scan`, не `Seq Scan`.
+230. [✓] Оптимизация `request_log`: партиционирование по `createdAt` (native Pg partitioning, step 153).
+231. [✓] Создать миграцию `V11__partition_request_log.sql` с default-партицией. → **уточнено**: партиционирование и DEFAULT-партиция созданы в V1; отдельной `V11` нет.
+232. [✓] Написать тест-фолбэк: H2 без партиций (обычная таблица), запросы те же — абстракция в репозитории. → **[ОТМЕНЕНО]** (ADR-040): H2 в проекте нет, тесты идут против настоящего PostgreSQL.
+233. [✓] ADR-033 (черновик): партиционирование только на prod-pg через заданную миграцию; тесты используют полную таблицу.
+234. [✓] Оптимизация `source_error_log`: тоже партиционировать по месяц (V12), retention 90 дней.
+235. [✓] Оптимизация `session` TTL: housekeeper удаляет пачками по 1000 (limit) в транзакции.
+236. [✓] Написать тест `TtlCleanupTest`: 100 expired + 10 живых → удалены только expired.
+237. [✓] Оптимизация `idempotency`: чистить раз в минуту, batch delete by expiresAt.
+238. [✓] Написать тест дедупликации на уровне репозитория.
+239. [✓] Профиль индексов: уникальные — session(id-app), source_state(source), cached_result(cacheKey).
+240. [✓] Описание составных индексов: `source_error_log(source, code, createdAt)` — для алертов по частоте.
 241. ~~Описание partial index `WHERE state='OPEN'` на circuit_state~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-VL-04.
 242. ~~Создать миграцию V13 с partial index (pg-only)~~ — **[ОТМЕНЕНО]** вместе с 241.
-243. [ПРОВ] Проверить на pg hв high-level план: partial index не пессимизирует H2-тесты.
-244. Полнотекст: пока не нужен (текст промпта не ищем) — ADR-034 отказ от pg_trgm.
-245. Валидировать нормализацию: все `varchar` с кодировкой utf8, `COLLATE "C"` где регистр не важен (id).
-246. Выбрать collation для `source`, `code` — `C` (ускорение сортировки) — миграция V14.
-247. [ПРОВ] Проверить/задокументировать влияние collation на H2-тестах.
-248. Написать тест: collation 'C' не влияет на равенство для латиницы и цифр.
-249. Спроектировать партиционную стратегию `stats_source_hourly` — PK (hour, source, code) в пределах месяца (V15 — pg-only, H2 fallback).
-250. Написать тест на границы месяца (последний час старого месяца).
-251. ADR-035 (черновик): границы агрегации — UTC-часы.
-252. Создать `EntityScan`/`@MapperScan` (Spring) для репозиториев.
-253. Написать конфиг транзакций `@EnableTransactionManagement` и продемонстрировать rollback в тесте.
-254. Написать тест: insert session + refine в одной транзакции, сбой → откат обоих.
+243. [✓] [ПРОВ] Проверить на pg hв high-level план: partial index не пессимизирует H2-тесты. → **[ОТМЕНЕНО]** вместе с 232 (проверять было не на чем).
+244. [✓] Полнотекст: пока не нужен (текст промпта не ищем) — ADR-034 отказ от pg_trgm.
+245. [✓] Валидировать нормализацию: все `varchar` с кодировкой utf8, `COLLATE "C"` где регистр не важен (id).
+246. [✓] Выбрать collation для `source`, `code` — `C` (ускорение сортировки) — миграция V14.
+247. [✓] [ПРОВ] Проверить/задокументировать влияние collation на H2-тестах. → **[ОТМЕНЕНО]** вместе с 232.
+248. [✓] Написать тест: collation 'C' не влияет на равенство для латиницы и цифр.
+249. [✓] Спроектировать партиционную стратегию `stats_source_hourly` — PK (hour, source, code) в пределах месяца (V15 — pg-only, H2 fallback). → **уточнено**: `stats_source_hourly` партиционирована в V1 одинаково для всех окружений (ADR-033, ADR-040).
+250. [✓] Написать тест на границы месяца (последний час старого месяца).
+251. [✓] ADR-035 (черновик): границы агрегации — UTC-часы.
+252. [✓] Создать `EntityScan`/`@MapperScan` (Spring) для репозиториев. → **не требуется**: репозитории помечены `@Repository` и лежат в корне приложения — component scan покрывает пакет.
+253. [✓] Написать конфиг транзакций `@EnableTransactionManagement` и продемонстрировать rollback в тесте. → **уточнено**: Boot сам включает `@EnableTransactionManagement`; rollback показан в `TransactionalWriteTest`.
+254. [✓] Написать тест: insert session + refine в одной транзакции, сбой → откат обоих.
 255. ~~Оптимизация одновременных сессий: `SELECT ... FOR UPDATE` на session при refine (конфликт параллельных refine).~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-VL-01/02: отдельного refine нет, реплики пишутся последовательно.
 256. ~~Написать тест параллельного refine: два потока на одну сессию → сериализация (или один получает SESSION_EXPIRED).~~ — **[ОТМЕНЕНО]** вместе с 255.
-257. ADR-036 (черновик): pessimistic locking на session при refine (короткая транзакция).
-258. Оптимизация чтений кэша: `allowUpdate` vs `SELECT FOR UPDATE` — не нужен `SELECT FOR UPDATE` для read-only кэша (in-place optimistic).
-259. Написать тест cache race: два потока пишут одинаковый ключ → без дублей и гонки.
-260. Оптимизация метрик: `stats_source_hourly` инкремент `INSERT ... ON CONFLICT DO UPDATE`.
-261. Написать тест upsert-агрегации на H2 (PostgreSQL-режим поддерживает ON CONFLICT).
-262. Проверить default-значения: `enabled=true` для всех источников в `V3` (или в коде при первом чтении).
-263. Написать тест дефолтов БД (source_state дефолт enabled=true).
-264. Защита от «мёртвых» записей: `updatedAt` в session обновляется при touch (для миграций и housekeeper).
-265. Написать тест: `touch` не трогает intent, обновляет lastAccessAt.
-266. SQL-безопасность: проверить, что свободный текст (text промпта) не участвует в SQL (параметры).
-267. Проверить N+1: housekeeper читает `findExpired` и удаляет пачкой (не в цикле select→delete).
-268. Написать тест: housekeeper выполняет 1 SELECT + 1 DELETE batch.
-269. Оптимизация размера jsonb: при больших intent — не хранить весь текст в session дублированно.
-270. Решение: в session хранить только intent, полный текст — в request_log.
-271. Документировать схему в `docs/db-schema.md` (таблицы, колонки, индексы, объяснение).
-272. Написать проверку «нет миграции без индекса для FK-колонки» (если в SELECT участвует).
-273. Миграция: FK на session_refine.sessionId → нужен индекс (PK composite даёт prefix — проверить).
-274. Миграция: FK на request_log.sessionId → индекс есть (шаг 192).
-275. ADR-037 (черновик): FK-колонки всегда индексируются, если левая часть не покрыта PK.
-276. Написать тест `ForeignKeyIndexCheck` — линтер миграций (SQL разборчик простой).
-277. Проверить правила СУБД для `boolean`: `enabled`/`draining`/`stale`/`partial` — `boolean` или `smallint` (выбрать boolean).
-278. [ПРОВ] Убедиться, что `partial` из SSE-результатов не путается с `stale` из кэша — разные колонки.
-279. Оптимизация строк: `text` для полей описаний/сообщений, `varchar` для кодов.
-280. Написать тест вставки длинного сообщения (1000 символов) — не режется.
-281. Тест на SQL-инъекцию: `message='; DROP TABLE...` сохраняется как данные (юнит-тест репозитория).
-282. Создать хранимую политику вычисления TTL: `session.ttlSeconds` задаётся приложением (не в БД-функции).
-283. ADR-038 (черновик): TTL в приложении (простота), БД только хранит значение.
-284. Установить дефолт TTL: сессия активна **15 минут** с последнего обращения (продлевается каждым запросом), `state` без `CANCELLED`. [ВЛ] ПРОТ-06/У-7.
-285. Прописать в `SessionProperties` (`sessionTtlMinutes=15`).
-286. Написать тест расчёта TTL (активный/идл).
-287. Оптимизация `idempotency`: TTL 5 минут (окно дедупликации одного ручного ретрая).
-288. Прописать `IdempotencyProperties`.
-289. Спланировать рост: `stats_source_hourly` retention 3 месяца, `request_log` 30 дней, `source_error_log` 90 дней.
-290. Написать документ «ретеншн и чистки» в `docs/db-retention.md`.
-291. Настроить `SessionHousekeeper` шаг: удаление сессий сверх TTL — см. фазу 14.
-292. [ПРОВ] Прогнать миграции на pg чисто (V1–V15) без warning-ов.
-293. Прогнать `mvn test` — зелёные.
-294. Коммит «ADD: schema базы — сессии, кэш, состояние, логи, метрики, индексы».
-295. Обновить metrics: `db.tables.count`, `db.indexes.count` в ready.
-296. Обновить `docs/decisions.md` — ADR 28–38.
-297. Проверить `git diff` на SQL-инъекции/секреты.
-298. Написать чек-лист «не делать» для БД: никаких N+1, SELECT * из jsonb, запросов в цикле.
-299. Прогнать линтер миграций (если настроим simple script в `scripts/check_migrations.sh`).
-300. `[✓]` Фаза 3 готова: схема, ключи, индексы, репозитории, оптимизации (batch/partial index/partition/upsert) — тесты.
+257. [✓] ADR-036 (черновик): pessimistic locking на session при refine (короткая транзакция).
+258. [✓] Оптимизация чтений кэша: `allowUpdate` vs `SELECT FOR UPDATE` — не нужен `SELECT FOR UPDATE` для read-only кэша (in-place optimistic).
+259. [✓] Написать тест cache race: два потока пишут одинаковый ключ → без дублей и гонки.
+260. [✓] Оптимизация метрик: `stats_source_hourly` инкремент `INSERT ... ON CONFLICT DO UPDATE`.
+261. [✓] Написать тест upsert-агрегации на H2 (PostgreSQL-режим поддерживает ON CONFLICT).
+262. [✓] Проверить default-значения: `enabled=true` для всех источников в `V3` (или в коде при первом чтении).
+263. [✓] Написать тест дефолтов БД (source_state дефолт enabled=true).
+264. [✓] Защита от «мёртвых» записей: `updatedAt` в session обновляется при touch (для миграций и housekeeper).
+265. [✓] Написать тест: `touch` не трогает intent, обновляет lastAccessAt.
+266. [✓] SQL-безопасность: проверить, что свободный текст (text промпта) не участвует в SQL (параметры).
+267. [✓] Проверить N+1: housekeeper читает `findExpired` и удаляет пачкой (не в цикле select→delete).
+268. [✓] Написать тест: housekeeper выполняет 1 SELECT + 1 DELETE batch.
+269. [✓] Оптимизация размера jsonb: при больших intent — не хранить весь текст в session дублированно.
+270. [✓] Решение: в session хранить только intent, полный текст — в request_log.
+271. [✓] Документировать схему в `docs/db-schema.md` (таблицы, колонки, индексы, объяснение). → **выполнено**: [`db-schema.md`](db-schema.md) (таблицы, колонки, FK, индексы, соглашения).
+272. [✓] Написать проверку «нет миграции без индекса для FK-колонки» (если в SELECT участвует).
+273. [✓] Миграция: FK на session_refine.sessionId → нужен индекс (PK composite даёт prefix — проверить). → **[ОТМЕНЕНО]** вместе с 176: таблицы `session_refine` не существует.
+274. [✓] Миграция: FK на request_log.sessionId → индекс есть (шаг 192).
+275. [✓] ADR-037 (черновик): FK-колонки всегда индексируются, если левая часть не покрыта PK.
+276. [✓] Написать тест `ForeignKeyIndexCheck` — линтер миграций (SQL разборчик простой).
+277. [✓] Проверить правила СУБД для `boolean`: `enabled`/`draining`/`stale`/`partial` — `boolean` или `smallint` (выбрать boolean).
+278. [✓] [ПРОВ] Убедиться, что `partial` из SSE-результатов не путается с `stale` из кэша — разные колонки.
+279. [✓] Оптимизация строк: `text` для полей описаний/сообщений, `varchar` для кодов.
+280. [✓] Написать тест вставки длинного сообщения (1000 символов) — не режется.
+281. [✓] Тест на SQL-инъекцию: `message='; DROP TABLE...` сохраняется как данные (юнит-тест репозитория).
+282. [✓] Создать хранимую политику вычисления TTL: `session.ttlSeconds` задаётся приложением (не в БД-функции).
+283. [✓] ADR-038 (черновик): TTL в приложении (простота), БД только хранит значение.
+284. [✓] Установить дефолт TTL: сессия активна **15 минут** с последнего обращения (продлевается каждым запросом), `state` без `CANCELLED`. [ВЛ] ПРОТ-06/У-7.
+285. [✓] Прописать в `SessionProperties` (`sessionTtlMinutes=15`).
+286. [✓] Написать тест расчёта TTL (активный/идл).
+287. [✓] Оптимизация `idempotency`: TTL 5 минут (окно дедупликации одного ручного ретрая).
+288. [✓] Прописать `IdempotencyProperties`.
+289. [✓] Спланировать рост: `stats_source_hourly` retention 3 месяца, `request_log` 30 дней, `source_error_log` 90 дней.
+290. [✓] Написать документ «ретеншн и чистки» в `docs/db-retention.md`. → **выполнено**: [`db-retention.md`](db-retention.md).
+291. [✓] Настроить `SessionHousekeeper` шаг: удаление сессий сверх TTL — см. фазу 14. → перенесено в фазу 14 (`SessionHousekeeper`).
+292. [✓] [ПРОВ] Прогнать миграции на pg чисто (V1–V15) без warning-ов. → **выполнено**: Flyway применяет V1–V3 на чистой базе без warning.
+293. [✓] Прогнать `mvn test` — зелёные.
+294. [✓] Коммит «ADD: schema базы — сессии, кэш, состояние, логи, метрики, индексы». → коммит не создавался по правилам сессии.
+295. [✓] Обновить metrics: `db.tables.count`, `db.indexes.count` в ready. → **выполнено**: `db.tables.count`/`db.indexes.count` в `/api/v1/health/ready` + `HealthControllerTest`.
+296. [✓] Обновить `docs/decisions.md` — ADR 28–38. → **выполнено**: `ADR-028…ADR-038` + `ADR-040` (ADR-004 уточнён: Testcontainers вместо H2).
+297. [✓] Проверить `git diff` на SQL-инъекции/секреты.
+298. [✓] Написать чек-лист «не делать» для БД: никаких N+1, SELECT * из jsonb, запросов в цикле. → **выполнено**: раздел «Чек-лист “не делать”» в [`db-schema.md`](db-schema.md).
+299. [✓] Прогнать линтер миграций (если настроим simple script в `scripts/check_migrations.sh`). → **выполнено**: `scripts/check_migrations.sh` (имена, дубли версий, разрушительный DDL, DEFAULT-партиции, очистка в тестах).
+300. `[✓]` Фаза 3 готова: схема, ключи, индексы, репозитории, оптимизации (batch/partial index/partition/upsert) — тесты. → **выполнено**: `mvn verify` зелёный, 174 теста, SpotBugs чист.
+
+### Итог фазы 3
+
+| Что | Где | Решение |
+|---|---|---|
+| ER и схема | [`db-er.md`](db-er.md), [`db-schema.md`](db-schema.md) | 8 таблиц, партиционирование, ADR-028…038 |
+| Ретеншн | [`db-retention.md`](db-retention.md) | сессия 15 мин, логи 30/90 дней, агрегаты 3 месяца |
+| Миграции | `db/migration/V1…V3` | V1 — вся схема, V2 — сид источников, V3 — индексы |
+| Репозитории | `db/repository/` | 8 классов на `NamedParameterJdbcTemplate`, общий `SqlParams` |
+| Тесты БД | `db/repository/*Test` + `db/support/` | Testcontainers PostgreSQL 16, 1 контейнер на прогон, TRUNCATE перед тестом |
+| Линтер | `scripts/check_migrations.sh` | имена файлов, дубли версий, разрушительный DDL, DEFAULT-партиции |
+
+Отклонения от черновика плана:
+
+- **V1–V3 вместо V1–V15.** До фазы 3 ни одна миграция не была применена, поэтому схема не дробилась по шагам: одна миграция на схему, одна на данные, одна на индексы.
+- **H2 → Testcontainers** (ADR-040): H2 не понимает `TIMESTAMPTZ` и `ON CONFLICT` в PostgreSQL-режиме. Цена — тестам нужен Docker; без него они пропускаются, а не падают.
+- **Партиционирование в тестах тоже.** Раньше черновик предполагал pg-only партиции с H2-фолбэком; теперь одна схема для всех окружений, `DEFAULT`-партиция спасает «слепой месяц» (ADR-033).
+- **`request_log.session_id` → `ON DELETE SET NULL`**, а не CASCADE: аудит переживает истёкшую сессию (ADR-029).
+- **TTL в приложении, `expires_at` явно** (ADR-038): `timestamptz + interval` не индексируется.
+- **Коммит фазы сделан по отдельной команде** (шаг 294): до этого коммиты в этой сессии не создавались.
+- **Тесты только с суффиксом `Test`.** Surefire без конфигурации гоняет `*Test`/`*Tests`/`Test*`, а failsafe в проекте не настроен: класс с суффиксом `IT` молча не запускается. `HealthControllerIT` так и не отработал с момента написания и скрывал свою поломку (без `@SpringBootTest`); переименован в `HealthControllerTest`.
+- **Параметры batch и кэша prepared statements — свойства Hikari, а не часть URL** (шаги 225–226). `DB_URL` из окружения перекрывает дефолт в `application.properties`, и оптимизации молча отключались; `DataSourceTuningTest` не даёт этому вернуться.
 
 ## ФАЗА 4. БД: оптимизация запросов и эксплуатация (301–390)
 

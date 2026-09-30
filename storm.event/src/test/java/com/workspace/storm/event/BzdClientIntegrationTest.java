@@ -1,5 +1,6 @@
 package com.workspace.storm.event;
 
+import com.workspace.storm.event.db.support.DbConnectionTestSupport;
 import com.workspace.storm.event.client.BzdClient;
 import com.workspace.storm.event.entity.bzd.BzdStation;
 import com.workspace.storm.event.entity.bzd.BzdTrain;
@@ -18,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Slf4j
 @Tag("integration")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-public class BzdClientIntegrationTest {
+public class BzdClientIntegrationTest extends DbConnectionTestSupport {
 
     @Autowired
     private BzdClient bzdClient;

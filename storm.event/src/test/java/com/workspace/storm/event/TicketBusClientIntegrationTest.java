@@ -1,5 +1,6 @@
 package com.workspace.storm.event;
 
+import com.workspace.storm.event.db.support.DbConnectionTestSupport;
 import com.workspace.storm.event.client.TicketBusClient;
 import com.workspace.storm.event.dto.TicketBusSearchRequest;
 import com.workspace.storm.event.entity.tb.TbRace;
@@ -20,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Slf4j
 @Tag("integration")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-public class TicketBusClientIntegrationTest {
+public class TicketBusClientIntegrationTest extends DbConnectionTestSupport {
 
     private static final String ORIGIN_MINSK = "500000";
     private static final String DEST_GRODNO = "400001";

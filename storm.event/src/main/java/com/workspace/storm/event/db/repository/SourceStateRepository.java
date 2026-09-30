@@ -2,8 +2,8 @@ package com.workspace.storm.event.db.repository;
 
 import com.workspace.storm.event.db.entity.SourceStateEntity;
 import com.workspace.storm.event.db.mapper.SourceStateRowMapper;
+import com.workspace.storm.event.db.support.SqlParams;
 import lombok.RequiredArgsConstructor;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -28,24 +28,24 @@ public class SourceStateRepository {
                 ramp_until = EXCLUDED.ramp_until,
                 updated_at = EXCLUDED.updated_at
             """;
-        MapSqlParameterSource params = new MapSqlParameterSource()
-                .addValue("source", entity.getSource())
-                .addValue("enabled", entity.isEnabled())
-                .addValue("draining", entity.isDraining())
-                .addValue("rampUntil", entity.getRampUntil())
-                .addValue("updatedAt", entity.getUpdatedAt() != null ? entity.getUpdatedAt() : Instant.now());
-        jdbc.update(sql, params);
+        jdbc.update(sql, SqlParams.create()
+                .add("source", entity.getSource())
+                .add("enabled", entity.isEnabled())
+                .add("draining", entity.isDraining())
+                .addInstant("rampUntil", entity.getRampUntil())
+                .addInstant("updatedAt", entity.getUpdatedAt() != null ? entity.getUpdatedAt() : Instant.now())
+                .build());
     }
 
     public Optional<SourceStateEntity> findBySource(String source) {
         String sql = "SELECT * FROM storm.source_state WHERE source = :source";
-        List<SourceStateEntity> result = jdbc.query(sql, new MapSqlParameterSource("source", source), rowMapper);
-        return result.stream().findFirst();
+        return jdbc.query(sql, SqlParams.create().add("source", source).build(), rowMapper)
+                .stream().findFirst();
     }
 
     public List<SourceStateEntity> findByEnabled(boolean enabled) {
         String sql = "SELECT * FROM storm.source_state WHERE enabled = :enabled";
-        return jdbc.query(sql, new MapSqlParameterSource("enabled", enabled), rowMapper);
+        return jdbc.query(sql, SqlParams.create().add("enabled", enabled).build(), rowMapper);
     }
 
     public List<SourceStateEntity> findAll() {

@@ -1,5 +1,6 @@
 package com.workspace.storm.event;
 
+import com.workspace.storm.event.db.support.DbConnectionTestSupport;
 import com.workspace.storm.event.client.BelHotelClient;
 import com.workspace.storm.event.dto.HotelSearchRequest;
 import com.workspace.storm.event.entity.hotel.Hotel;
@@ -18,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Slf4j
 @Tag("integration")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-public class BelHotelClientIntegrationTest {
+public class BelHotelClientIntegrationTest extends DbConnectionTestSupport {
 
     @Autowired
     private BelHotelClient belHotelClient;

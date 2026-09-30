@@ -12,6 +12,7 @@ public class SessionEntity {
     private UUID id;
     private String intent;
     private Instant lastAccessAt;
+    private Instant expiresAt;
     private Instant createdAt;
     private int ttlSeconds;
     private String state;

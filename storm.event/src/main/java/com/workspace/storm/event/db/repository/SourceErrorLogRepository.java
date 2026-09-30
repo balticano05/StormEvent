@@ -2,6 +2,7 @@ package com.workspace.storm.event.db.repository;
 
 import com.workspace.storm.event.db.entity.SourceErrorLogEntity;
 import com.workspace.storm.event.db.mapper.SourceErrorLogRowMapper;
+import com.workspace.storm.event.db.support.SqlParams;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -15,37 +16,23 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class SourceErrorLogRepository {
 
+    private static final String INSERT = """
+        INSERT INTO storm.source_error_log (request_id, source, code, message, latency_ms, created_at)
+        VALUES (:requestId, :source, :code, :message, :latencyMs, :createdAt)
+        """;
+
     private final NamedParameterJdbcTemplate jdbc;
     private final SourceErrorLogRowMapper rowMapper = new SourceErrorLogRowMapper();
 
     public void insert(SourceErrorLogEntity entity) {
-        String sql = """
-            INSERT INTO storm.source_error_log (request_id, source, code, message, latency_ms, created_at)
-            VALUES (:requestId, :source, :code, :message, :latencyMs, :createdAt)
-            """;
-        MapSqlParameterSource params = new MapSqlParameterSource()
-                .addValue("requestId", entity.getRequestId())
-                .addValue("source", entity.getSource())
-                .addValue("code", entity.getCode())
-                .addValue("message", entity.getMessage())
-                .addValue("latencyMs", entity.getLatencyMs())
-                .addValue("createdAt", entity.getCreatedAt());
-        jdbc.update(sql, params);
+        jdbc.update(INSERT, params(entity));
     }
 
     public void batchInsert(List<SourceErrorLogEntity> entities) {
-        String sql = """
-            INSERT INTO storm.source_error_log (request_id, source, code, message, latency_ms, created_at)
-            VALUES (:requestId, :source, :code, :message, :latencyMs, :createdAt)
-            """;
-        MapSqlParameterSource[] batch = entities.stream().map(e -> new MapSqlParameterSource()
-                .addValue("requestId", e.getRequestId())
-                .addValue("source", e.getSource())
-                .addValue("code", e.getCode())
-                .addValue("message", e.getMessage())
-                .addValue("latencyMs", e.getLatencyMs())
-                .addValue("createdAt", e.getCreatedAt())).toArray(MapSqlParameterSource[]::new);
-        jdbc.batchUpdate(sql, batch);
+        MapSqlParameterSource[] batch = entities.stream()
+                .map(this::params)
+                .toArray(MapSqlParameterSource[]::new);
+        jdbc.batchUpdate(INSERT, batch);
     }
 
     public int countSince(String source, String code, Instant since) {
@@ -53,15 +40,42 @@ public class SourceErrorLogRepository {
             SELECT COUNT(*) FROM storm.source_error_log
             WHERE source = :source AND code = :code AND created_at >= :since
             """;
-        Integer count = jdbc.queryForObject(sql, new MapSqlParameterSource()
-                .addValue("source", source)
-                .addValue("code", code)
-                .addValue("since", since), Integer.class);
-        return count == null ? 0 : count;
+        Integer count = jdbc.queryForObject(sql, SqlParams.create()
+                .add("source", source)
+                .add("code", code)
+                .addInstant("since", since)
+                .build(), Integer.class);
+        return count != null ? count : 0;
     }
 
     public List<SourceErrorLogEntity> findBySource(String source) {
         String sql = "SELECT * FROM storm.source_error_log WHERE source = :source ORDER BY created_at DESC LIMIT 100";
-        return jdbc.query(sql, new MapSqlParameterSource("source", source), rowMapper);
+        return jdbc.query(sql, SqlParams.create().add("source", source).build(), rowMapper);
+    }
+
+    public int deleteOlderThan(Instant before, int limit) {
+        String sql = """
+            DELETE FROM storm.source_error_log
+            WHERE (id, created_at) IN (
+                SELECT id, created_at FROM storm.source_error_log
+                WHERE created_at < :before
+                LIMIT :limit
+            )
+            """;
+        return jdbc.update(sql, SqlParams.create()
+                .addInstant("before", before)
+                .add("limit", limit)
+                .build());
+    }
+
+    private MapSqlParameterSource params(SourceErrorLogEntity entity) {
+        return SqlParams.create()
+                .add("requestId", entity.getRequestId())
+                .add("source", entity.getSource())
+                .add("code", entity.getCode())
+                .add("message", entity.getMessage())
+                .add("latencyMs", entity.getLatencyMs())
+                .addInstant("createdAt", entity.getCreatedAt())
+                .build();
     }
 }
