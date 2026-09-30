@@ -4,6 +4,10 @@
 # Log file
 *.log
 
+# Каталог логов приложения (STORM_LOG_DIR по умолчанию — logs/)
+logs/
+**/logs/
+
 # BlueJ files
 *.ctxt
 

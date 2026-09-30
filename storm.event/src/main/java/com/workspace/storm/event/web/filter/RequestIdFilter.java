@@ -5,7 +5,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.MDC;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -24,7 +23,7 @@ public class RequestIdFilter extends OncePerRequestFilter {
     private static final Pattern VALID_PATTERN = Pattern.compile("^[A-Za-z0-9._-]{1,64}$");
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, @NotNull HttpServletResponse response, @NotNull FilterChain filterChain)
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
         String requestId = Optional.ofNullable(request.getHeader(REQUEST_ID_HEADER))
@@ -42,10 +41,12 @@ public class RequestIdFilter extends OncePerRequestFilter {
         }
     }
 
+    /**
+     * Только API: у статики и корня request-id не нужен, а MDC на всё
+     * приложение засоряет лог нерелевантными идентификаторами.
+     */
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !Optional.ofNullable(request.getServletPath())
-                .orElse("")
-                .startsWith("/api/v1/");
+        return !RequestPaths.withinApplication(request).startsWith("/api/v1/");
     }
 }

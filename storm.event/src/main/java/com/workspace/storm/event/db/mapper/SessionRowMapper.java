@@ -5,6 +5,7 @@ import org.springframework.jdbc.core.RowMapper;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Optional;
 import java.util.UUID;
 
 public class SessionRowMapper implements RowMapper<SessionEntity> {
@@ -13,7 +14,9 @@ public class SessionRowMapper implements RowMapper<SessionEntity> {
     public SessionEntity mapRow(ResultSet rs, int rowNum) throws SQLException {
         SessionEntity e = new SessionEntity();
         e.setId(rs.getObject("id", UUID.class));
-        e.setIntent(rs.getString("intent"));
+        // intent nullable: у сессий, созданных до разбора запроса, его нет.
+        // Наружу отдаём пустой объект, чтобы потребителю не разбирать null.
+        e.setIntent(Optional.ofNullable(rs.getString("intent")).orElse("{}"));
         e.setLastAccessAt(TimestampMapper.toInstant(rs.getTimestamp("last_access_at")));
         e.setExpiresAt(TimestampMapper.toInstant(rs.getTimestamp("expires_at")));
         e.setCreatedAt(TimestampMapper.toInstant(rs.getTimestamp("created_at")));

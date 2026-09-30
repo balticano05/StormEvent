@@ -54,13 +54,23 @@ public class IdempotencyRepository {
         return jdbc.query(sql, SqlParams.create().addInstant("before", before).build(), rowMapper);
     }
 
+    /**
+     * Чистит окно дедупликации порциями по {@code limit} (ADR-043).
+     *
+     * <p>Одна операция вместо «выбрали ключи, потом удалили»: пара операций
+     * на одной и той же строке из двух сборщиков давала взаимную блокировку и
+     * лишний сетевой заход. {@code FOR UPDATE SKIP LOCKED} оставляет занятые
+     * строки следующему проходу.
+     */
     public int deleteExpired(Instant before, int limit) {
         String sql = """
             DELETE FROM storm.idempotency
             WHERE request_id IN (
                 SELECT request_id FROM storm.idempotency
                 WHERE expires_at < :before
+                ORDER BY expires_at
                 LIMIT :limit
+                FOR UPDATE SKIP LOCKED
             )
             """;
         return jdbc.update(sql, SqlParams.create()

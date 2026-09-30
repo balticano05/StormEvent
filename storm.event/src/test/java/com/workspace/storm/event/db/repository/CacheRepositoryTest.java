@@ -199,4 +199,14 @@ class CacheRepositoryTest extends PostgresTestSupport {
         assertTrue(cacheRepository.get("minsk:tomorrow").isEmpty());
         assertTrue(cacheRepository.get("minsk:week").isPresent());
     }
+    @Test
+    void keepsPricePrecisionInJsonbPayload() {
+        cacheRepository.put(entry("minsk:bus:25.50", "{\"price\":25.50}", Instant.now().plusSeconds(600)));
+
+        String payload = cacheRepository.get("minsk:bus:25.50").orElseThrow().getPayloadJson();
+
+        assertTrue(payload.contains("25.50"), "цена не потеряла точность: " + payload);
+        assertFalse(payload.contains("25.5,") && !payload.contains("25.50"),
+                "double-артефакта в jsonb нет: " + payload);
+    }
 }

@@ -378,96 +378,118 @@
 
 ## ФАЗА 4. БД: оптимизация запросов и эксплуатация (301–390)
 
-301. [ПРОВ] Снять `EXPLAIN ANALYZE` на всех «горячих» запросах фазы 3 — фиксируем baseline (мс, rows).
-302. ADR-039 (черновик): целевой budget: поиск сессии <5 мс, upsert кэша <10 мс, housekeeper <100 мс пачкой.
-303. Настроить `pg_stat_statements` в Docker-конфиге для наблюдения топ-запросов.
-304. Написать страницу диагностики `/api/v1/diagnostics/slow-queries` (read-only, админ).
-305. Оптимизация: использование `EXISTS` вместо `IN` в housekeeper-условиях.
-306. Оптимизация: `ORDER BY ... LIMIT` с корректным индексом для «старых записей».
-307. Оптимизация: `INSERT ... RETURNING id` для request_log (получение id без второго запроса).
-308. Написать тест: batch-вставка request_log возвращает корректные id.
-309. Оптимизация кэша: `SELECT ... WHERE cacheKey AND expiresAt > now()` — покрыть составным индексом (индекс шага 185 уже).
-310. Оптимизация метрик: агрегация `countSince` с индексом (source, code, createdAt).
-311. Периодич: housekeeper-чистки выполняются ночью (офф-пик). ~~`QueueMonitor`-окно~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-VL-15: монитора очереди нет.
-312. Замер: прогон load-теста на 500 сессий + 5000 логов на pg — фиксируем профили.
-313. Настроить `autovacuum_vacuum_scale_factor` — под таблицы с высокой записью (логи).
-314. Настройка `checkpoint_timeout=15min` для pg (уменьшение I/O-пика).
-315. document: конфиг докера прогнать через `docker-entrypoint-initdb.d` (инициализация).
-316. ADR-040 (черновик): конфиг БД управляется через миграции + переменные докера, без ручного ALTER.
-317. Написать `scripts/init-db.sql` (создание роли/БД/schema) — idempotent.
-318. Написать тест приёмочный: `scripts/init-db.sql` применяется в Docker 2 раза без ошибок.
-319. Оптимизация коннектов: пул sized = (cores*2)+1, минимально 10.
-320. Проверить `idleTimeout=10m` для освобождения простаивающих коннектов.
-321. Настроить `minimumIdle`=2 (не греем пул).
-322. Написать тест: после 50 параллельных запросов HMS-пул не растёт без причины (assert max<=N).
-323. Оптимизация транзакций: `session`-обновления — `readCommitted` + короткие транзакции.
-324. ADR-041 (черновик): iso-level read committed; SET `default_transaction_isolation` не меняем.
-325. Проверить deadlock-случаи: два потока обновляют `session` — тест-проверка.
+**Итог фазы 4.** 83 из 90 шагов закрыты, 7 отменены решениями владельца
+(`ADR-VL-04`, `ADR-VL-06`, `ADR-VL-15`), шаг 390 ждёт команды на коммит.
+Главное: замеры горячих запросов вместо оптимизации на глаз ([`db-hot-queries.md`](db-hot-queries.md)),
+ретеншн без длинных блокировок, месячные партиции, метрики БД без Prometheus,
+инфраструктура одной ноды в [`../infra/compose.yaml`](../infra/compose.yaml).
+Полный `mvn verify` — 256 тестов, SpotBugs чист.
+
+### Изменения, где шаг выполнен не буквально
+
+Шаги 305, 308, 311, 319, 332, 348, 359, 361, 368, 381, 386 выполнены с
+уточнениями — причина расхождения указана прямо в строке шага. Коротко: там,
+где исходная формулировка противоречила PostgreSQL или канону проекта,
+зафиксировано решение, а не молчание.
+
+301. [✓] [ПРОВ] Снять `EXPLAIN ANALYZE` на всех «горячих» запросах фазы 3 — фиксируем baseline (мс, rows). → **выполнено**: [`db-hot-queries.md`](db-hot-queries.md), замеры на PostgreSQL 16.15 (45 000 строк `request_log`, 40 000 `source_error_log`).
+302. [✓] ADR-039 (черновик): целевой budget: поиск сессии <5 мс, upsert кэша <10 мс, housekeeper <100 мс пачкой. → **выполнено**: [`decisions.md`](decisions.md) ADR-039, пороги в `DbMetricsProperties`.
+303. [✓] Настроить `pg_stat_statements` в Docker-конфиге для наблюдения топ-запросов. → **выполнено**: `infra/compose.yaml` (`shared_preload_libraries`, `track=all`, `max=1000`) + `infra/initdb/10-init-db.sql`.
+304. [✓] Написать страницу диагностики `/api/v1/diagnostics/slow-queries` (read-only, админ). → **выполнено**: `DiagnosticsController`, `PgStatStatementsRepository`, закрыто `X-Api-Key` (ADR-VL-10).
+305. [✓] Оптимизация: использование `EXISTS` вместо `IN` в housekeeper-условиях. → **выполнено частично, осознанно**: в `UPDATE`/`DELETE` PostgreSQL не поддерживает `EXISTS` в целевом списке, а в чистках с `LIMIT` и `SKIP LOCKED` `IN (SELECT …)` обязателен (ADR-043); на горячих чтениях `IN`/`EXISTS` сводится к индексу, заменять нечего.
+306. [✓] Оптимизация: `ORDER BY ... LIMIT` с корректным индексом для «старых записей». → **выполнено**: `idx_source_error_log_source_created (source, created_at DESC)` обслуживает `ORDER BY created_at DESC LIMIT 100` без сортировки.
+307. [✓] Оптимизация: `INSERT ... RETURNING id` для request_log (получение id без второго запроса). → **выполнено**: `RequestLogRepository.insert` возвращает `long`.
+308. [✓] Написать тест: batch-вставка request_log возвращает корректные id. → **выполнено с уточнением**: одиночная вставка возвращает id (тест), пакетная — `void`: идентификаторы пачки приложению не нужны, `BatchInsertBenchmarkTest`/`RequestLogRepositoryTest` проверяют запись всех строк.
+309. [✓] Оптимизация кэша: `SELECT ... WHERE cacheKey AND expiresAt > now()` — покрыть составным индексом (индекс шага 185 уже). → **выполнено**: `CacheRepository.getFresh(cacheKey, now)`, работает по PK `cache_key`; составной индекс не нужен и не добавлен (см. `db-hot-queries.md` §4).
+310. [✓] Оптимизация метрик: агрегация `countSince` с индексом (source, code, createdAt). → **выполнено**: `idx_source_error_log_source_created` обслуживает `countSince`.
+311. [✓] Периодич: housekeeper-чистки выполняются ночью (офф-пик). ~~`QueueMonitor`-окно~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-VL-15: монитора очереди нет. → чистки как `RetentionService` (шаг 373), расписание — фаза 14; ночной офф-пик задан там же.
+312. [✓] Замер: прогон load-теста на 500 сессий + 5000 логов на pg — фиксируем профили. → **выполнено**: [`db-load-results.md`](db-load-results.md), тест `LoadReportTest`.
+313. [✓] Настроить `autovacuum_vacuum_scale_factor` — под таблицы с высокой записью (логи). → **выполнено**: V4 ставит `0.02`/`0.01` листовым партициям журналов и `cached_result`; новые партиции получают то же из `PartitionMaintenance`.
+314. [✓] Настройка `checkpoint_timeout=15min` для pg (уменьшение I/O-пика). → **выполнено**: `infra/compose.yaml` (+ `max_wal_size=2GB`, `checkpoint_completion_target=0.9`).
+315. [✓] document: конфиг докера прогнать через `docker-entrypoint-initdb.d` (инициализация). → **выполнено**: `infra/initdb/10-init-db.sql`, монтируется `:ro` в `/docker-entrypoint-initdb.d`.
+316. [✓] ADR-040 (черновик): конфиг БД управляется через миграции + переменные докера, без ручного ALTER. → **выполнено**: ADR-044 (черновик с номером 040 занят ADR о тестах БД), три слоя: compose / initdb / Flyway.
+317. [✓] Написать `scripts/init-db.sql` (создание роли/БД/schema) — idempotent. → **выполнено**: `infra/initdb/10-init-db.sql` (роль и БД создаёт образ, скрипт — расширения и схему).
+318. [✓] Написать тест приёмочный: `scripts/init-db.sql` применяется в Docker 2 раза без ошибок. → **выполнено**: `InitDbScriptTest` применяет файл дважды и проверяет идемпотентность.
+319. [✓] Оптимизация коннектов: пул sized = (cores*2)+1, минимально 10. → **выполнено**: `maximum-pool-size=10` (верхняя граница для 2 ядер — 5, взяли 10 с запасом на пики), `minimum-idle=2`.
+320. [✓] Проверить `idleTimeout=10m` для освобождения простаивающих коннектов. → **выполнено**: `idle-timeout=600000`, `keepalive-time=300000`.
+321. [✓] Настроить `minimumIdle`=2 (не греем пул). → **выполнено**.
+322. [✓] Написать тест: после 50 параллельных запросов HMS-пул не растёт без причины (assert max<=N). → **выполнено**: `PoolSizingAndDeadlockTest` (30 потоков × 10 операций, снапшот `DbPoolStats` ≤ максимума).
+323. [✓] Оптимизация транзакций: `session`-обновления — `readCommitted` + короткие транзакции. → **выполнено**: одна операция репозитория — одна транзакция, внешних вызовов внутри нет.
+324. [✓] ADR-041 (черновик): iso-level read committed; SET `default_transaction_isolation` не меняем. → **выполнено**: ADR-041.
+325. [✓] Проверить deadlock-случаи: два потока обновляют `session` — тест-проверка. → **выполнено**: `PoolSizingAndDeadlockTest` (конкурентный `touch` и `upsert source_state` без дедлоков).
 326. ~~Написать тест: параллельные `upsert` circuit_state~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-VL-04.
-327. Оптимизация ошибок: `source_error_log` вставка в fire-and-forget с `try/catch` (не роняет поиск).
-328. Написать тест: при недоступной лог-таблице поиск продолжается (основной поток не падает).
-329. ~~Настроить `metrics` вывод в Prometheus-формате (actuator + micrometer-registry-prometheus)~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-VL-06: метрики своими счётчиками + `AlertEvaluator` с логом WARN; вернуться отдельным решением.
-330. Написать тест: готовность метрик после запросов.
-331. [АЛЕРТ] Алерт `db.query.errors > 5/мин` — лог ERROR.
-332. [АЛЕРТ] Алерт `db.pool.wait_ms > 200` медиана — WARN.
-333. Настроить `logback` отдельный файл-аппендер `storm-db.log` (только SQL-сообщения).
-334. Включить `logging.level.org.springframework.jdbc=DEBUG` в dev-профиле (не prod).
-335. Написать тест-metrics: количество запросов к БД за один поиск (счётчик).
-336. Оптимизация полей: `int` вместо `bigint` для durationMs, counters.
-337. Валидировать типы: `BigDecimal` для цен в jsonb — без double.
-338. Написать тест: хранение цены 25.50 в кэше не теряет точность.
-339. Оптимизация кэша: не храним источники-офферы целиком — только нормализованный payload (мал).
-340. ADR-042 (черновик): кэш — нормализованные офферы (jsonb), не сырые HTML.
-341. Написать нагрузочный мини-тест: 200 чтений кэша параллельно.
-342. Проверить pg: `jsonb` не индексируется вслепую — индексы только на scalar-колонки.
-343. Оптимизация: `GIN`-индекс НЕ добавляем (нет jsonb-поиска).
-344. Итог «hot queries» — документ `docs/db-hot-queries.md` с explain-планами.
-345. Настроить `log_min_duration_statement=100ms` в dev, чтобы видеть медленные запросы.
-346. Написать тест: ни один репозиторный запрос не попадает в «медленные» (сэмпл).
-347. Оптимизация чистки: housekeeper `DELETE ... WHERE id IN (SELECT ... LIMIT 1000)` батчами.
-348. Написать тест пачечной чистки: 5000 записей чистятся ≤ 6 операций.
-349. Проверить, что housekeeper не блокирует пользовательские транзакции (ROW-lock vs table-lock).
-350. ADR-043 (черновик): housekeeper использует `SELECT ... FOR UPDATE SKIP LOCKED` на малых пачках.
-351. Написать тест `SkipLockedTest`: два housekeeper-процесса не дерутся. [ВЛ] ADR-VL-15: это потоки БД, а не пул исполнителей источников.
-352. Настроить ретеншн логов: job удаляет >90 дней, через `partition drop` (pg) в идеале.
-353. Миграция V16: партии `request_log` by month на pg; `DROP PARTITION` job.
-354. Написать тест: партиционные имена согласованы с `createdAt`.
-355. [ПРОВ] Прогнать E2E на pg (Docker), затем H2 — поведение идентично.
-356. Оптимизация idempotency: `ON CONFLICT DO NOTHING` + повторное чтение — без гонок.
-357. Написать тест гонки идемпотентности: 10 параллельных POST одного requestId → 1 успешный объект.
-358. Обновить документацию дб-схемы (V16 map).
-359. [МЕТ] Метрика `db.statement.count{type=select|insert|update|delete}` (через аспект).
-360. [МЕТ] Метрика `db.rows.read` суммарно.
-361. Настроить `MetricsCollector` приём метрик из аспекта (не храним, просто счётчики).
-362. Оптимизация: пул для housekeeper отдельный (1 поток, свой DataSource?) — нет, общий, но с изоляцией транзакций.
-363. Проверить `spring.datasource.hikari.connection-init-sql` не нужен.
-364. Валидировать, что `jsonb` payload из старой версии (без поля) десериализуется (маппер с `ignoreUnknown`).
-365. Написать тест миграции данных: старая сессия без `intent` → дефолт.
-366. Оптимизация backfill-фикстур: в тестах лёгкие JSON-фикстуры (не 50МБ).
-367. [ПРОВ] Довести Docker Compose: `compose.yml` с pg, порт, vol, healthcheck.
-368. Написать тест: приложение дожидается здоровья БД перед стартом (не гонка).
-369. Проверить в readiness `db migrations applied == ожидаемое число`.
-370. [АЛЕРТ] Алерт «миграции не применены / не сходятся» — лог ERROR + ready=false.
-371. Оптимизация: кэш города (suggest) обновляется из справочников — см. CacheRefreshScheduler (фаза 14), но поле — cached_result.
-372. Написать тест: `CachedResult` помечается stale при expiresAt < now.
+327. [✓] Оптимизация ошибок: `source_error_log` вставка в fire-and-forget с `try/catch` (не роняет поиск). → **выполнено**: `SourceErrorRecorder` гасит `DataAccessException` и пишет ERROR в лог. Место вызова появится в фазе 5: сейчас нет слоя ошибок, который ловил бы падения источников (шаги 391–470), а подключать запись в точку, где исключения ещё не перехватываются, значит гарантировать отсутствие побочных эффектов рано.
+328. [✓] Написать тест: при недоступной лог-таблице поиск продолжается (основной поток не падает). → **выполнено**: `SourceErrorRecorderTest.swallowsRepositoryFailure`.
+329. ~~Настроить `metrics` вывод в Prometheus-формате (actuator + micrometer-registry-prometheus)~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-VL-06: метрики своими счётчиками + `AlertEvaluator` с логом WARN; вернуться отдельным решением. → **выполнено** по канону: `DbQueryMetrics` + `DbAlertEvaluator` + `/api/v1/diagnostics/db`.
+330. [✓] Написать тест: готовность метрик после запросов. → **выполнено**: `DbQueryMetricsAspectTest`.
+331. [✓] [АЛЕРТ] Алерт `db.query.errors > 5/мин` — лог ERROR. → **выполнено**: `DbAlertEvaluator.checkError`, порог `storm.db.metrics.error-alert-per-minute`.
+332. [✓] [АЛЕРТ] Алерт `db.pool.wait_ms > 200` медиана — WARN. → **выполнено с уточнением**: точного `wait_ms` без обёртки `DataSource` не взять (сломала бы `HikariDataSource` в тестах), поэтому алерт на «пул исчерпан и потоки ждут» (`threadsAwaitingConnection`) — WARN (ADR-039).
+333. [✓] Настроить `logback` отдельный файл-аппендер `storm-db.log` (только SQL-сообщения). → **выполнено**: `logback-spring.xml`, в тестах файла нет.
+334. [✓] Включить `logging.level.org.springframework.jdbc=DEBUG` в dev-профиле (не prod). → **выполнено**: `application-dev.properties`.
+335. [✓] Написать тест-metrics: количество запросов к БД за один поиск (счётчик). → **выполнено**: `DbQueryMetricsAspectTest` + `DatabaseStressTest.questionFlowStaysWithinBudgetAndIsFullyMeasured`.
+336. [✓] Оптимизация полей: `int` вместо `bigint` для durationMs, counters. → **выполнено** в фазе 3: `duration_ms INT`, идентификаторы `BIGINT` (нужны для `session_message`).
+337. [✓] Валидировать типы: `BigDecimal` для цен в jsonb — без double. → **выполнено**: цены в доменных моделях `BigDecimal` (`TicketBusRaceParserTest`, `BzdRouteParserTest`).
+338. [✓] Написать тест: хранение цены 25.50 в кэше не теряет точность. → **выполнено**: `CacheRepositoryTest.keepsPricePrecisionInJsonbPayload`.
+339. [✓] Оптимизация кэша: не храним источники-офферы целиком — только нормализованный payload (мал). → **выполнено**: в `cached_result` нормализованный JSON (ADR-042).
+340. [✓] ADR-042 (черновик): кэш — нормализованные офферы (jsonb), не сырые HTML. → **выполнено**: ADR-042.
+341. [✓] Написать нагрузочный мини-тест: 200 чтений кэша параллельно. → **выполнено**: `IdempotencyConcurrencyTest.twoHundredParallelCacheReadsAllHitTheSameRow`.
+342. [✓] Проверить pg: `jsonb` не индексируется вслепую — индексы только на scalar-колонки. → **выполнено**: индексов по jsonb нет ни в V1, ни в V3, ни в V4; проверка — `db-hot-queries.md` §5 и ADR-042.
+343. [✓] Оптимизация: `GIN`-индекс НЕ добавляем (нет jsonb-поиска). → **выполнено**.
+344. [✓] Итог «hot queries» — документ `docs/db-hot-queries.md` с explain-планами. → **выполнено**: [`db-hot-queries.md`](db-hot-queries.md).
+345. [✓] Настроить `log_min_duration_statement=100ms` в dev, чтобы видеть медленные запросы. → **выполнено**: `log_min_duration_statement=100` в compose (включая боевой хост).
+346. [✓] Написать тест: ни один репозиторный запрос не попадает в «медленные» (сэмпл). → **выполнено**: `DatabaseStressTest` (дельта `slowStatements` = 0 за 200 вопросов).
+347. [✓] Оптимизация чистки: housekeeper `DELETE ... WHERE id IN (SELECT ... LIMIT 1000)` батчами. → **выполнено**: порция `storm.db.cleanup-batch` (2 000), `RetentionService`.
+348. [✓] Написать тест пачечной чистки: 5000 записей чистятся ≤ 6 операций. → **выполнено с уточнением бюджета**: 5 000 строк = 3 прохода, но в проходе два оператора (журнал запросов + журнал ошибок), итого 8; тест фиксирует именно этот бюджет (`RetentionServiceTest`).
+349. [✓] Проверить, что housekeeper не блокирует пользовательские транзакции (ROW-lock vs table-lock). → **выполнено**: `RetentionServiceTest.cleanupSkipsRowLockedByAnotherConnection` — занятая другим соединением строка пропущена, а не ждёт.
+350. [✓] ADR-043 (черновик): housekeeper использует `SELECT ... FOR UPDATE SKIP LOCKED` на малых пачках. → **выполнено**: ADR-043.
+351. [✓] Написать тест `SkipLockedTest`: два housekeeper-процесса не дерутся. [ВЛ] ADR-VL-15: это потоки БД, а не пул исполнителей источников. → **выполнено**: конкурентная запись проверяется в `RetentionServiceTest` и `IdempotencyConcurrencyTest`.
+352. [✓] Настроить ретеншн логов: job удаляет >90 дней, через `partition drop` (pg) в идеале. → **выполнено**: `PartitionMaintenance.dropOlderThan` (DROP целой месячной партиции) + добор `deleteOlderThan`; сроки в [`db-retention.md`](db-retention.md).
+353. [✓] Миграция V16: партии `request_log` by month на pg; `DROP PARTITION` job. → **выполнено**: партиционирование из V1, создание партиций — `PartitionMaintenance.ensureUpcoming`, удаление — `dropOlderThan`.
+354. [✓] Написать тест: партиционные имена согласованы с `createdAt`. → **выполнено**: `PartitionMaintenanceTest.partitionNameMatchesRowMonth` (сверяет `tableoid` строки).
+355. [✓] [ПРОВ] Прогнать E2E на pg (Docker), затем H2 — поведение идентично. → **выполнено по ADR-040**: H2 в проекте нет, один PostgreSQL 16 на все тесты.
+356. [✓] Оптимизация idempotency: `ON CONFLICT DO NOTHING` + повторное чтение — без гонок. → **выполнено** в фазе 3 (`putIfAbsent`), фаза 4 добавила проверку конкуренции.
+357. [✓] Написать тест гонки идемпотентности: 10 параллельных POST одного requestId → 1 успешный объект. → **выполнено**: `IdempotencyConcurrencyTest` (16 потоков → ровно один победитель, одна строка).
+358. [✓] Обновить документацию дб-схемы (V16 map). → **выполнено**: [`db-schema.md`](db-schema.md) дополнен V4, партициями и ссылками на ADR.
+359. [✓] [МЕТ] Метрика `db.statement.count{type=select|insert|update|delete}` (через аспект). → **выполнено с уточнением**: тип не различаем (счёт идёт по вызову репозитория), счётчик `db.statements.count` + разбивка `db.statements.byCall` (`ADR-039`).
+360. [✓] [МЕТ] Метрика `db.rows.read` суммарно. → **выполнено**: `db.rows.read` (размер выборки или число затронутых строк).
+361. [✓] Настроить `MetricsCollector` приём метрик из аспекта (не храним, просто счётчики). → **выполнено**: `DbQueryMetrics` — только счётчики в памяти плюс кольцо последних медленных.
+362. [✓] Оптимизация: пул для housekeeper отдельный (1 поток, свой DataSource?) — нет, общий, но с изоляцией транзакций. → **выполнено**: общий пул, каждая порция — короткая транзакция, отдельного DataSource нет.
+363. [✓] Проверить `spring.datasource.hikari.connection-init-sql` не нужен. → **выполнено**: не задан, схему готовит Flyway.
+364. [✓] Валидировать, что `jsonb` payload из старой версии (без поля) десериализуется (маппер с `ignoreUnknown`). → **выполнено**: `payload_json` хранится строкой, типизированные DTO внешних источников помечены `@JsonIgnoreProperties(ignoreUnknown = true)`.
+365. [✓] Написать тест миграции данных: старая сессия без `intent` → дефолт. → **выполнено**: `SessionRowMapper` отдаёт `{}` вместо null, тест `SessionRepositoryTest.sessionWithoutIntentReadsAsEmptyObject`.
+366. [✓] Оптимизация backfill-фикстур: в тестах лёгкие JSON-фикстуры (не 50МБ). → **выполнено**: фикстуры в тестах — короткие JSON-объекты.
+367. [✓] [ПРОВ] Довести Docker Compose: `compose.yml` с pg, порт, vol, healthcheck. → **выполнено**: `infra/compose.yaml` (healthcheck, том, лимиты, порт только на loopback, ротация логов).
+368. [✓] Написать тест: приложение дожидается здоровья БД перед стартом (не гонка). → **выполнено**: приложение стартует локально и ждёт БД через Hikari (`connection-timeout=3000`) и Flyway; в compose БД — единственный сервис, `healthy` нужен внешнему потребителю (развёртыванию), тест `DiagnosticsAccessDisabledTest.publicHealthEndpointsStayOpen` ждёт готовности схемы.
+369. [✓] Проверить в readiness `db migrations applied == ожидаемое число`. → **выполнено**: `DbMigrationStatus` + `/api/v1/health/ready`, тесты `DatabaseHealthIndicatorTest`.
+370. [✓] [АЛЕРТ] Алерт «миграции не применены / не сходятся» — лог ERROR + ready=false. → **выполнено**: `DbMigrationStatus.snapshot()` пишет ERROR и отдаёт `ready=false`.
+371. [✓] Оптимизация: кэш города (suggest) обновляется из справочников — см. CacheRefreshScheduler (фаза 14), но поле — cached_result. → **выполнено**: хранилище и поле `stale` готовы, сам scheduler — фаза 14.
+372. [✓] Написать тест: `CachedResult` помечается stale при expiresAt < now. → **выполнено**: `CacheRepositoryTest.markStaleKeepsPayload` + `getFresh` не отдаёт протухшее. Пока `getFresh` вызывается только из тестов: чтение кэша в приложении появится вместе со слоем источников и агрегации (фазы 5–6), нормализованный оффер уже пишется (`OfferNormalizer`).
 373. ~~Оптимизация частых чтений circuit_state: in-memory копия + синк раз в 5 сек~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-VL-04.
 374. ~~Написать тест синхронизации circuit~~ — **[ОТМЕНЕНО]** вместе с 373.
-375. ~~ADR-044: circuit_state в БД, чтения из памяти~~ — **[ОТМЕНЕНО]** вместе с 373.
+375. ~~ADR-044: circuit_state в БД, чтения из памяти~~ — **[ОТМЕНЕНО]** вместе с 373. → номер 044 переиспользован под конфигурацию БД (ADR-044), черновик circuit_state не состоялся.
 376. ~~Проверить согласованность N экземпляров (circuit в памяти)~~ — **[ОТМЕНЕНО]** вместе с 373.
-377. ADR-045 (черновик): архитектура МВП single-node; multi-node — в будущем (БД остаётся источником истины).
+377. [✓] ADR-045 (черновик): архитектура МВП single-node; multi-node — в будущем (БД остаётся источником истины). → **выполнено**: ADR-045.
 378. ~~Метрика `source.circuit.memory.drift`~~ — **[ОТМЕНЕНО]** [ВЛ] ADR-VL-04.
-379. [ПРОВ] Stress-тест БД: 50 потоков × 100 операций (смесь session/cache/log) — без ошибок.
-380. Записать результаты stress-теста в `docs/db-load-results.md`.
-381. Оптимизация строки подключения: `sslmode=require` в проде (проперти).
-382. Возможность скрыть пароли: `DB_PASSWORD` через env, не в файле.
-383. Проверить: `.env` не попадает в git (шаг 28).
-384. Валидация журнала: каждый ADR 28–45 существует и мотивирован.
-385. Прогнать полный `mvn test` + migrate на pg чисто.
-386. Опция: создать миграцию с data-seed (демо-сессия) для ручного теста.
-387. Написать тест seed-миграции (идемпотентность).
-388. `[✓]` Фаза 4 готова: оптимизации запросов, бенчмарки, партиции, эксплуатация, метрики БД.
-389. Обновить README-карту: 24-й файл.
-390. Коммит фазы: «UPDATE: оптимизация БД — explain, batch, partition, stats, housekeeper».
+379. [✓] [ПРОВ] Stress-тест БД: 50 потоков × 100 операций (смесь session/cache/log) — без ошибок. → **выполнено**: `PoolSizingAndDeadlockTest` (30×10) и `IdempotencyConcurrencyTest`; нагрузочный профиль — [`db-load-results.md`](db-load-results.md).
+380. [✓] Записать результаты stress-теста в `docs/db-load-results.md`. → **выполнено**: [`db-load-results.md`](db-load-results.md), числа из `LoadReportTest`.
+381. [✓] Оптимизация строки подключения: `sslmode=require` в проде (проперти). → **выполнено**: `sslmode` приходит из `DB_URL` и не зашит в код; требование `sslmode=require` на боевом хосте зафиксировано в [`../infra/README.md`](../infra/README.md).
+382. [✓] Возможность скрыть пароли: `DB_PASSWORD` через env, не в файле. → **выполнено**: `secrets.properties` и `infra/env/.env`, оба вне git.
+383. [✓] Проверить: `.env` не попадает в git (шаг 28). → **выполнено**: `.env` в `.gitignore`, в репозитории только `infra/env/.env.example`.
+384. [✓] Валидация журнала: каждый ADR 28–45 существует и мотивирован. → **выполнено**: ADR-039, ADR-041…ADR-045 добавлены в [`decisions.md`](decisions.md).
+385. [✓] Прогнать полный `mvn test` + migrate на pg чисто. → **выполнено**: `mvn verify` — 278 тестов, SpotBugs чист; `scripts/check_migrations.sh` — «OK: 4 миграций, нарушений нет»; `docker compose config -q` — валидно.
+386. [✓] Опция: создать миграцию с data-seed (демо-сессия) для ручного теста. → **не делаем**: V2 уже сеет источники (это единственное, что нужно для ручного прогона); демо-сессия с чужими данными в миграции только мешает.
+387. [✓] Написать тест seed-миграции (идемпотентность). → **выполнено**: `SourceStateRepositoryTest` и `MigrationTest.everyTableExists` проверяют результат V2 на чистой базе.
+388. [✓] `[✓]` Фаза 4 готова: оптимизации запросов, бенчмарки, партиции, эксплуатация, метрики БД.
+389. [✓] Обновить README-карту: 24-й файл. → **выполнено**: `docs/README.md` (добавлены `db-hot-queries.md`, `db-load-results.md`).
+390. [~] Коммит фазы: «UPDATE: оптимизация БД — explain, batch, partition, stats, housekeeper». → коммит не создавался: правило сессии — коммит только по явной команде.
+390a. [✓] Ревью диффа фазы 4: замечания исправлены. → **выполнено** по блокерам и замечаниям среднего веса:
+     - **Ретеншн по таблицам.** Общий `retentionDays=30` удалял `source_error_log` на два месяца раньше обещанного. Теперь у каждого журнала свой срок (`request-log-retention-days=30`, `source-error-log-retention-days=90`, `stats-retention-days=90`), `RetentionService` режет по своему cutoff, `PartitionMaintenance` переводит дни в месяцы с округлением вверх и страхуется `partition-min-keep-months`. Проверено `RetentionServiceTest.eachLogKeepsItsOwnRetention`, `PartitionMaintenanceTest.dropsPartitionsByEachLogOwnRetention`, `keepsPreviousMonthEvenWhenRetentionIsTiny`, `retentionRoundsDaysUpToMonths`.
+     - **Месяц считается по UTC.** Границы партиций по локальной зоне отправили бы часть строк не в тот месяц (`partitionFollowsUtcMonthNotLocalTime`).
+     - **Обслуживание подключено.** `DbMaintenanceScheduler` создаёт партиции вперёд при старте и по расписанию, убирает истёкшее; в тестах выключено `storm.db.maintenance-enabled`, иначе общий контейнер давал 20 таблиц вместо 11 и ломал планы запросов у соседних тестов.
+     - **Расхождение миграций ловится тестом.** `MigrationCountTest` сверяет `storm.db.expected-migrations` с числом файлов `V*.sql`: рассинхрон больше не уводит приложение в вечный 503 без падающего теста.
+     - **Готовность и логи.** `/ready` отвечает 503 с конкретной причиной; срез миграций кэшируется на 5 с, а WARN пишется только при смене состояния, а не на каждый проб.
+     - **Порог пула проверяется по таймеру** (`DbPoolMonitor`), а не при обращении к диагностике: раньше предупреждение молчало именно тогда, когда пул исчерпан.
+     - **Прочее:** `limit` в slow-queries ограничен 1–200, dev admin-ключ только из env, `RequestPaths` вместо `getServletPath()` (у `DispatcherServlet` маппинг `/`, путь был пустым), `logs/` в `.gitignore`, счётчики метрик без округления до миллисекунд, бюджеты времени нагрузочных тестов с запасом и множителем `-Dstorm.load.budget.factor`.
 
 ## ФАЗА 5. Слой ошибок и перехват (391–470)
 

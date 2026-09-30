@@ -8,6 +8,30 @@
         </encoder>
     </appender>
 
+    <!-- Журнал эксплуатации БД: медленные запросы, ошибки, пороги (шаг 333).
+         Отдельный файл нужен, чтобы не вылавливать диагностику в общем потоке.
+         В профиле test файла нет: тесты не пишут на диск. -->
+    <springProfile name="!test">
+        <property name="DB_LOG_DIR" value="${STORM_LOG_DIR:-logs}"/>
+        <appender name="DB_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${DB_LOG_DIR}/storm-db.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>${DB_LOG_DIR}/storm-db.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+                <maxFileSize>10MB</maxFileSize>
+                <maxHistory>7</maxHistory>
+                <totalSizeCap>200MB</totalSizeCap>
+            </rollingPolicy>
+            <encoder>
+                <pattern>${LOG_PATTERN}</pattern>
+            </encoder>
+        </appender>
+
+        <logger name="com.workspace.storm.event.db" level="INFO" additivity="false">
+            <appender-ref ref="DB_FILE"/>
+            <appender-ref ref="CONSOLE"/>
+        </logger>
+    </springProfile>
+
     <logger name="com.workspace.storm.event.gateway" level="DEBUG"/>
     <logger name="com.workspace.storm.event.client" level="DEBUG"/>
     <logger name="com.workspace.storm.event.parser" level="DEBUG"/>

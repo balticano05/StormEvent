@@ -24,6 +24,48 @@ public class CacheRepository {
                 .stream().findFirst();
     }
 
+    /**
+     * Кэш по ключу с проверкой свежести на стороне БД (шаг 309).
+     *
+     * <p>Условие {@code expires_at > :now} отсекает протухшую запись уже в
+     * базе: приложению не нужно читать строку, чтобы потом её отбросить, а
+     * параметр {@code now} приходит из того же источника времени, что и
+     * остальные запросы, - решение о свежести остаётся у теста и приложения.
+     */
+    public Optional<CachedResultEntity> getFresh(String cacheKey, Instant now) {
+        String sql = """
+            SELECT * FROM storm.cached_result
+            WHERE cache_key = :cacheKey AND expires_at > :now
+            """;
+        return jdbc.query(sql, SqlParams.create()
+                        .add("cacheKey", cacheKey)
+                        .addInstant("now", now)
+                        .build(), rowMapper)
+                .stream().findFirst();
+    }
+
+    /**
+     * Удаляет не более {@code limit} протухших записей одним оператором
+     * (ADR-043). Замена связки findExpiredKeys + deleteByKeys: та ж�� два
+     * прохода, но одним оператором и без блокировки чужой работы.
+     */
+    public int deleteExpiredBefore(Instant before, int limit) {
+        String sql = """
+            DELETE FROM storm.cached_result
+            WHERE cache_key IN (
+                SELECT cache_key FROM storm.cached_result
+                WHERE expires_at < :before
+                ORDER BY expires_at
+                LIMIT :limit
+                FOR UPDATE SKIP LOCKED
+            )
+            """;
+        return jdbc.update(sql, SqlParams.create()
+                .addInstant("before", before)
+                .add("limit", limit)
+                .build());
+    }
+
     public void put(CachedResultEntity entity) {
         String sql = """
             INSERT INTO storm.cached_result (cache_key, source, domain, payload_json, created_at, expires_at, stale)

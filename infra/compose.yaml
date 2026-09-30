@@ -1,0 +1,92 @@
+# Локальный и боевой PostgreSQL StormEvent (ADR-044).
+#
+# Схему создаёт не этот файл, а Flyway (storm.event/src/main/resources/db/migration).
+# Здесь только то, что должно существовать до первой миграции, плюс настройки
+# сервера, которые нельзя выразить миграцией: расширения, память, чекпоинты.
+#
+# Запуск:
+#   cp infra/env/.env.example infra/env/.env   # заполнить пароль
+#   docker compose --env-file infra/env/.env -f infra/compose.yaml up -d
+#
+# Пароль БД живёт только в infra/env/.env (в git не попадает) и в secrets.properties
+# модуля. Значения в этом файле обязаны совпадать, иначе приложение не подключится.
+
+name: storm-db
+
+services:
+  postgres:
+    image: postgres:16.15-alpine
+    container_name: storm-postgres
+    restart: unless-stopped
+    env_file:
+      - env/.env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-storm}
+      POSTGRES_USER: ${POSTGRES_USER:-storm}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?заполните infra/env/.env}
+      PGDATA: /var/lib/postgresql/data/pgdata
+      # Расширения и параметры сервера: то, что нельзя менять миграцией.
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+      - -c
+      - pg_stat_statements.track=all
+      - -c
+      - pg_stat_statements.max=1000
+      # 5000 запросов жили в одном DEFAULT-партиции: seq scan на history.
+      # Изоляция чтения не меняем, но планировщику нужен честный объём.
+      - -c
+      - default_statistics_target=100
+      # Чекпоинт: раздутый WAL съедает диск, но и длинный чекпоинт означает
+      # длинную паузу. 15 минут - компромисс для одной ноды (ADR-045).
+      - -c
+      - checkpoint_timeout=15min
+      - -c
+      - max_wal_size=2GB
+      - -c
+      - checkpoint_completion_target=0.9
+      # Медленные запросы видны в логе контейнера и в diagnostics.
+      - -c
+      - log_min_duration_statement=100
+      - -c
+      - log_checkpoints=on
+      - -c
+      - log_lock_waits=on
+      - -c
+      - deadlock_timeout=1s
+      # Мусорка живёт 30 минут, чтобы cache_key не рос после чистки.
+      - -c
+      - autovacuum_naptime=30s
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - effective_cache_size=768MB
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - storm-pgdata:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-storm} -d ${POSTGRES_DB:-storm}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1g
+        reservations:
+          memory: 256m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  storm-pgdata:
+    name: storm-pgdata

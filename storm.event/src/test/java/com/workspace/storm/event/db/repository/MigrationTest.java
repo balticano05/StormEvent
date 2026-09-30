@@ -20,7 +20,7 @@ class MigrationTest extends PostgresTestSupport {
                         + "WHERE success AND version IS NOT NULL ORDER BY installed_rank",
                 String.class);
 
-        assertEquals(List.of("1", "2", "3"), versions);
+        assertEquals(List.of("1", "2", "3", "4"), versions);
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.workspace.storm.event.config;
 
 import com.workspace.storm.event.OkHttpProperties;
+import com.workspace.storm.event.web.filter.AdminKeyFilter;
 import com.workspace.storm.event.web.filter.RequestIdFilter;
 import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
@@ -34,6 +35,12 @@ public class AppConfig {
     @Bean
     public RequestIdFilter requestIdFilter() {
         return new RequestIdFilter();
+    }
+
+    /** Служебный API под ключом (ADR-VL-10): /api/v1/diagnostics/**. */
+    @Bean
+    public AdminKeyFilter adminKeyFilter(AdminProperties properties) {
+        return new AdminKeyFilter(properties);
     }
 
     @Bean

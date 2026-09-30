@@ -53,13 +53,16 @@ public class SourceErrorLogRepository {
         return jdbc.query(sql, SqlParams.create().add("source", source).build(), rowMapper);
     }
 
+    /** Добор журнала ошибок порциями, без ожидания занятых строк (ADR-043). */
     public int deleteOlderThan(Instant before, int limit) {
         String sql = """
             DELETE FROM storm.source_error_log
             WHERE (id, created_at) IN (
                 SELECT id, created_at FROM storm.source_error_log
                 WHERE created_at < :before
+                ORDER BY created_at
                 LIMIT :limit
+                FOR UPDATE SKIP LOCKED
             )
             """;
         return jdbc.update(sql, SqlParams.create()

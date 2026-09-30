@@ -123,4 +123,17 @@ class SessionRepositoryTest extends PostgresTestSupport {
 
         assertTrue(sessionRepository.findById(id).isEmpty());
     }
+    @Test
+    void sessionWithoutIntentReadsAsEmptyObject() {
+        UUID id = UUID.randomUUID();
+        jdbc.update("""
+            INSERT INTO storm.session (id, intent, last_access_at, created_at, expires_at)
+            VALUES (?, NULL, NOW(), NOW(), NOW() + INTERVAL '15 minutes')
+            """, id);
+
+        SessionEntity loaded = sessionRepository.findById(id).orElseThrow();
+
+        assertEquals("{}", loaded.getIntent(),
+                "старая сессия без intent читается как пустой объект, а не как null");
+    }
 }

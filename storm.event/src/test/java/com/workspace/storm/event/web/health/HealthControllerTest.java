@@ -22,6 +22,7 @@ class HealthControllerTest extends DbConnectionTestSupport {
     @Autowired
     private DatabaseHealthIndicator dbHealth;
 
+
     @Test
     void readyReportsDomainTablesAndIndexes() {
         ResponseEntity<Map<String, Object>> response = controller.readiness();
