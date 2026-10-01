@@ -26,6 +26,14 @@ public abstract class StormException extends RuntimeException {
         this.retryAfterMs = retryAfterMs;
     }
 
+    protected StormException(ErrorCode errorCode, String message) {
+        this(errorCode, message, null, null);
+    }
+
+    protected StormException(ErrorCode errorCode, String message, Throwable cause) {
+        this(errorCode, message, cause, null, null);
+    }
+
     public HttpStatus getHttpStatus() {
         return errorCode.getHttpStatus();
     }

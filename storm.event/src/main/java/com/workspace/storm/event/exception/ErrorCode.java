@@ -19,7 +19,12 @@ public enum ErrorCode {
     REQUEST_TIMEOUT(HttpStatus.GATEWAY_TIMEOUT),
     DATA_CONSTRAINT(HttpStatus.CONFLICT),
     IDEMPOTENCY_CONFLICT(HttpStatus.CONFLICT),
-    RATE_LIMITED(HttpStatus.TOO_MANY_REQUESTS);
+    RATE_LIMITED(HttpStatus.TOO_MANY_REQUESTS),
+    SEARCH_FINISHED_PARTIAL(HttpStatus.OK),
+    PROVIDER_DOWN(HttpStatus.SERVICE_UNAVAILABLE),
+    PARSE_ERROR(HttpStatus.BAD_GATEWAY),
+    TOOL_ERROR(HttpStatus.BAD_GATEWAY),
+    LLM_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE);
 
     @Getter
     private final HttpStatus httpStatus;

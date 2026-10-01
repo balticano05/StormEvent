@@ -1,17 +1,13 @@
 package com.workspace.storm.event.exception;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ResponseStatus;
-
-@ResponseStatus(HttpStatus.BAD_GATEWAY)
-public class TicketBusClientException extends RuntimeException {
+public class TicketBusClientException extends StormException {
 
     public TicketBusClientException(String message) {
-        super(message);
+        super(ErrorCode.SOURCE_ERROR, message, "ticketbus", null);
     }
 
     public TicketBusClientException(String message, Throwable cause) {
-        super(message, cause);
+        super(ErrorCode.SOURCE_ERROR, message, cause, "ticketbus", null);
     }
 
 }

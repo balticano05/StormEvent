@@ -1,10 +1,13 @@
 package com.workspace.storm.event.exception;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ResponseStatus;
+public class BelHotelClientException extends StormException {
 
-@ResponseStatus(HttpStatus.BAD_GATEWAY)
-public class BelHotelClientException extends RuntimeException {
-    public BelHotelClientException(String message) { super(message); }
-    public BelHotelClientException(String message, Throwable cause) { super(message, cause); }
+    public BelHotelClientException(String message) {
+        super(ErrorCode.SOURCE_ERROR, message, "belhotel", null);
+    }
+
+    public BelHotelClientException(String message, Throwable cause) {
+        super(ErrorCode.SOURCE_ERROR, message, cause, "belhotel", null);
+    }
+
 }
