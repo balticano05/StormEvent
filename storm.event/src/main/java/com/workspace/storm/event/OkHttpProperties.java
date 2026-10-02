@@ -14,7 +14,7 @@ public class OkHttpProperties {
     private long connectTimeoutMs = 5_000;
     private long readTimeoutMs = 10_000;
     private long writeTimeoutMs = 10_000;
-    private long callTimeoutMs = 0;
+    private long callTimeoutMs = 60000;
     private boolean retryOnConnectionFailure = true;
     private int maxIdleConnections = 5;
     private long keepAliveMinutes = 5;
