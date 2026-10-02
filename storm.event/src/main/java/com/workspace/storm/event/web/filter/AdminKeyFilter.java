@@ -24,7 +24,7 @@ import java.util.Optional;
 public class AdminKeyFilter extends OncePerRequestFilter {
 
     private static final String API_KEY_HEADER = "X-Api-Key";
-    private static final String PROTECTED_PREFIX = "/api/v1/diagnostics/";
+    private static final String[] PROTECTED_PREFIXES = {"/api/v1/diagnostics/", "/api/v1/sources/"};
     private static final String DISABLED_BODY = "{\"status\":\"ADMIN_API_DISABLED\"}";
     private static final String DENIED_BODY = "{\"status\":\"UNAUTHORIZED\"}";
 
@@ -57,7 +57,13 @@ public class AdminKeyFilter extends OncePerRequestFilter {
      */
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !RequestPaths.withinApplication(request).startsWith(PROTECTED_PREFIX);
+        String path = RequestPaths.withinApplication(request);
+        for (String prefix : PROTECTED_PREFIXES) {
+            if (path.startsWith(prefix)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean isAuthorized(HttpServletRequest request, String expected) {

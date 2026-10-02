@@ -1,9 +1,11 @@
 package com.workspace.storm.event.agent;
 
 import java.util.ArrayList;
+import org.springframework.stereotype.Component;
 import java.util.List;
 
 /** Эвристический извлекатель интента до подключения LLM (fallback). */
+@Component
 public class Extractor {
 
     public SearchIntent extract(String prompt) {
