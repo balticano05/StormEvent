@@ -4,6 +4,10 @@ import com.workspace.storm.event.client.BelHotelClient;
 import com.workspace.storm.event.client.BzdClient;
 import com.workspace.storm.event.db.repository.SourceStateRepository;
 import com.workspace.storm.event.orchestration.SourceExecutor;
+import com.workspace.storm.event.tool.SearchBusesTool;
+import com.workspace.storm.event.tool.SearchEventsTool;
+import com.workspace.storm.event.tool.SearchHotelsTool;
+import com.workspace.storm.event.tool.SearchTrainsTool;
 import com.workspace.storm.event.service.AtlasService;
 import com.workspace.storm.event.service.TicketBusService;
 import com.workspace.storm.event.service.TicketProService;
@@ -74,5 +78,25 @@ public class GatewayConfig {
     @Bean
     public SourceExecutor sourceExecutor() {
         return new SourceExecutor();
+    }
+
+    @Bean
+    public SearchBusesTool searchBusesTool(List<TransportGateway> transportGateways, SourceExecutor executor) {
+        return new SearchBusesTool(transportGateways, executor);
+    }
+
+    @Bean
+    public SearchTrainsTool searchTrainsTool(List<TransportGateway> transportGateways, SourceExecutor executor) {
+        return new SearchTrainsTool(transportGateways, executor);
+    }
+
+    @Bean
+    public SearchEventsTool searchEventsTool(List<EventGateway> eventGateways, SourceExecutor executor) {
+        return new SearchEventsTool(eventGateways, executor);
+    }
+
+    @Bean
+    public SearchHotelsTool searchHotelsTool(List<HotelGateway> hotelGateways, SourceExecutor executor) {
+        return new SearchHotelsTool(hotelGateways, executor);
     }
 }
